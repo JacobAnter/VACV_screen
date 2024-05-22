@@ -162,3 +162,4 @@ cython_debug/
 # Add additional file types to be ignored
 *.csv
 *.xlsx
+*.tsv
