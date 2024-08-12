@@ -91,14 +91,28 @@ for i, row in main_csv_df.iterrows():
         # two seconds; in total, this amounts to a "waiting time" of
         # 264,132 seconds, which corresponds to slightly more than three
         # days; this period of time is acceptable
-        time.sleep(2)
-        NCBI_entry = entrez.fetch_single_file(
-            uids=[NCBI_Gene_ID],
-            file_name=None,
-            db_name="gene",
-            ret_type="",
-            ret_mode="text"
-        )
+        time.sleep(1)
+        # As simply suspending code execution for a couple of seconds
+        # unfortunately does not prevent the occurrence of errors
+        # altogether, a try/except statement is incorporated retrying
+        # the dabase query for three times in total
+        for _ in range(3):
+            try:
+                NCBI_entry = entrez.fetch_single_file(
+                    uids=[NCBI_Gene_ID],
+                    file_name=None,
+                    db_name="gene",
+                    ret_type="",
+                    ret_mode="text"
+                )
+                break
+            except:
+                time.sleep(1)
+        else:
+            print(
+                "Database query wasn't succesful for the gene "
+                f"{gene_name} with gene ID {NCBI_Gene_ID}."
+            )
 
         # As the file_name is specified to be None, Biotite's
         # fetch_single_file() function returns a StringIO object
@@ -133,14 +147,25 @@ for i, row in main_csv_df.iterrows():
 
             # Again, in a bid to prevent the occurrence of server-side
             # errors, code execution is suspended for two seconds
-            time.sleep(2)
-            NCBI_entry = entrez.fetch_single_file(
-                uids=[new_gene_ID],
-                file_name=None,
-                db_name="gene",
-                ret_type="",
-                ret_mode="text"
-            )
+            time.sleep(1)
+            for _ in range(3):
+                try:
+                    NCBI_entry = entrez.fetch_single_file(
+                        uids=[new_gene_ID],
+                        file_name=None,
+                        db_name="gene",
+                        ret_type="",
+                        ret_mode="text"
+                    )
+                    break
+                except:
+                    time.sleep(1)
+            else:
+                print(
+                    "Querying the database wasn't successful for the "
+                    f"updated gene ID {new_gene_ID} (gene {gene_name})."
+                )
+
             NCBI_entry_str = NCBI_entry.getvalue()
             NCBI_entry_str_list = NCBI_entry_str.split("\n")
             while "" in NCBI_entry_str_list:
