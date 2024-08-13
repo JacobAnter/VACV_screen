@@ -82,15 +82,18 @@ for i, row in main_csv_df.iterrows():
         
         # Query NCBI's gene database with the Gene ID currently dealt
         # with
-        # Code execution is suspended for two seconds in order to avoid
+        # Code execution is suspended for one second in order to avoid
         # server-side errors
         # The VACV data set comprises 132,066 measurements involving
         # single siRNAs, pooled siRNAs and esiRNAs
         # For each of those measurements, the NCBI database is queried
         # at least once, entailing the suspension of code execution for
-        # two seconds; in total, this amounts to a "waiting time" of
-        # 264,132 seconds, which corresponds to slightly more than three
-        # days; this period of time is acceptable
+        # one second; in total, this amounts to a "waiting time" of
+        # 132,066 seconds, which corresponds to slightly more than one
+        # and a half days; this period of time is acceptable
+        # Suspending code execution for 2 seconds results in the job
+        # exceeding the maximum wall clock time, which is 96 hours for
+        # the defq partition
         time.sleep(1)
         # As simply suspending code execution for a couple of seconds
         # unfortunately does not prevent the occurrence of errors
@@ -146,7 +149,7 @@ for i, row in main_csv_df.iterrows():
             main_csv_df.at[i, "ID_manufacturer"] = new_gene_ID
 
             # Again, in a bid to prevent the occurrence of server-side
-            # errors, code execution is suspended for two seconds
+            # errors, code execution is suspended for one second
             time.sleep(1)
             for _ in range(3):
                 try:
