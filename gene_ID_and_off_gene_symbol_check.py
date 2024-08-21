@@ -113,7 +113,7 @@ for i, row in main_csv_df.iterrows():
                 time.sleep(1)
         else:
             print(
-                "Database query wasn't succesful for the gene "
+                "Database query wasn't successful for the gene "
                 f"{gene_name} with gene ID {NCBI_Gene_ID}."
             )
 
