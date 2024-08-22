@@ -209,5 +209,11 @@ for i, row in main_csv_df.iterrows():
 # As a last step, save the new Pandas DataFrame to a new CSV file
 main_csv_df.to_csv(
     "Vaccinia_Report_NCBI_Gene_IDs_and_official_gene_symbols_updated.csv",
+    # Bear in mind that if a different separator than the default one
+    # (comma) is desired, specifying the desired separator is also
+    # necessary when saving DataFrames to a CSV file! Apparently, once a
+    # CSV file has been read into a Pandas DataFrame, all information
+    # regarding the separator is discarded
+    sep="\t",
     index=False
 )
