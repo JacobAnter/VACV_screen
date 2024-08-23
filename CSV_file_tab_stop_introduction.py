@@ -13,12 +13,6 @@ between actual delimiters and commata which are part of entries.
 import numpy as np
 import pandas as pd
 
-with open(
-    "Vaccinia_Report_NCBI_Gene_IDs_and_official_gene_symbols_updated.csv",
-    "r"
-) as f:
-    file_lines = f.readlines()
-
 # List comprising unique values of column 31, i.e. the column following
 # column 30 ("Name_alternatives")
 siRNA_error_options = [
@@ -33,8 +27,16 @@ siRNA_error_options = [
 
 # Iterate through the lines, modify them accordingly and write the
 # adjusted lines to a new output file
-with open("adjusted_file.csv", "w") as f:
-    for line in file_lines:
+# Note that reading all the lines into memory at once via `.readlines()`
+# provokes an Out Of Memory error, which is why the file lines are
+# iterated over on the fly
+with open(
+    "Vaccinia_Report_NCBI_Gene_IDs_and_official_gene_symbols_updated.csv",
+    "r"
+) as prior_tab_intro_file, open(
+    "adjusted_file.csv", "w", newline=""
+) as post_tab_intro_file:
+    for line in prior_tab_intro_file:
         # When employing the built-in split method for strings, the
         # separation character is not retained, but discarded
         # Hence, by employing a trick involving a nested list
@@ -94,4 +96,4 @@ with open("adjusted_file.csv", "w") as f:
         # and the resulting string is written to the file
         # As the `.readlines()` method does not trim line endings, the
         # newline character (\n) does not have to be added
-        f.write("".join(split_line))
+        post_tab_intro_file.write("".join(split_line))
