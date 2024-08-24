@@ -72,15 +72,18 @@ with open(
         # Keep in mind that it is iterated through the list
         # `split_line`, which encompasses both the entries as well as
         # commata
+        # Also keep in mind that the numeric index starts with zero, not
+        # 1, so that when counting in the "human" way, column 30 has
+        # index 31
         # Therefore, the index corresponding to column 30 is not 30, but
-        # 1 + 28 * 2 + 1 = 58 (counting starts with 0, hence the comma
-        # of the first entry has index 1; to account for the remaining
-        # 28 entries, 28 * 2 is added; finally, in order to obtain the
-        # index of the 30th entry, 1 is added)
+        # 30 * 2 = 60 (counting starts with 0, hence the first column
+        # has index 0; to account for the remaining 30 entries, 30 * 2
+        # is added, yielding 60, the index of the entry corresponding to
+        # column 30)
         # Also bear in mind that the column has at least one entry,
         # which is why the index of the first element to query is
-        # increased by two, i.e. 60
-        entry_index_1 = 60
+        # increased by two, i.e. 62
+        entry_index_1 = 62
         subsequent_entry = split_line[entry_index_1]
         while subsequent_entry not in siRNA_error_options:
             entry_commata_list.append(entry_index_1 - 1)
@@ -89,13 +92,13 @@ with open(
         
         # Now, do the same thing with column 62, i.e. "Gene_Description"
         # Again, the index of the entry in `split_line` corresponding to
-        # column 62 is not 62, but 1 + 60 * 2 + 1 = 122, and as the
+        # column 62 is not 62, but 62 * 2 = 124, and as the
         # column contains at least one entry, the index of the first
-        # entry to query is increased by two (124)
+        # entry to query is increased by two (126)
         # Note that the index of the first entry to investigate has to
         # be adjusted according to the previous amount of "entry
         # commata"
-        entry_index_2 = 124 + len(entry_commata_list) * 2
+        entry_index_2 = 126 + len(entry_commata_list) * 2
         subsequent_entry = split_line[entry_index_2]
         while (
             (subsequent_entry != "Not available")
