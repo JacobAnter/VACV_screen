@@ -10,9 +10,6 @@ stops in a sophisticated manner taking account of this difference
 between actual delimiters and commata which are part of entries.
 """
 
-import numpy as np
-import pandas as pd
-
 # List comprising unique values of column 31, i.e. the column following
 # column 30 ("Name_alternatives")
 siRNA_error_options = [
