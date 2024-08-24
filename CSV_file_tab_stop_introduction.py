@@ -36,7 +36,25 @@ with open(
 ) as prior_tab_intro_file, open(
     "adjusted_file.csv", "w", newline=""
 ) as post_tab_intro_file:
-    for line in prior_tab_intro_file:
+    for i, line in enumerate(prior_tab_intro_file):
+        # Bear in mind that the first line represents the header, i.e.
+        # contains the column names
+        # Thus, all commata represent actual delimiters
+        if i == 0:
+            split_line = [
+                i for j in line.split(",") for i in (j, ",")
+            ][:-1]
+
+            # Simply replace all commata with tab stops
+            split_line_with_tabs = [
+                "\t" if i == "," else i for i in split_line
+            ]
+            
+            # Concatenate the entries in the updated list and write the
+            # resulting string to the file
+            post_tab_intro_file.write("".join(split_line_with_tabs))
+            continue
+
         # When employing the built-in split method for strings, the
         # separation character is not retained, but discarded
         # Hence, by employing a trick involving a nested list
@@ -62,20 +80,25 @@ with open(
         # of the first entry has index 1; to account for the remaining
         # 28 entries, 28 * 2 is added; finally, in order to obtain the
         # index of the 30th entry, 1 is added)
-        entry_index_1 = 58
+        # Also bear in mind that the column has at least one entry,
+        # which is why the index of the first element to query is
+        # increased by two, i.e. 60
+        entry_index_1 = 60
         subsequent_entry = split_line[entry_index_1]
         while subsequent_entry not in siRNA_error_options:
             entry_commata_list.append(entry_index_1 - 1)
             entry_index_1 += 2
+            subsequent_entry = split_line[entry_index_1]
         
-        # Now, do the same thing with column 62, i.e.
-        # ("Gene_Description")
+        # Now, do the same thing with column 62, i.e. "Gene_Description"
         # Again, the index of the entry in `split_line` corresponding to
-        # column 62 is not 62, but 1 + 60 * 2 + 1 = 122
+        # column 62 is not 62, but 1 + 60 * 2 + 1 = 122, and as the
+        # column contains at least one entry, the index of the first
+        # entry to query is increased by two (124)
         # Note that the index of the first entry to investigate has to
         # be adjusted according to the previous amount of "entry
         # commata"
-        entry_index_2 = 122 + len(entry_commata_list) * 2
+        entry_index_2 = 124 + len(entry_commata_list) * 2
         subsequent_entry = split_line[entry_index_2]
         while (
             (subsequent_entry != "Not available")
@@ -84,13 +107,14 @@ with open(
         ):
             entry_commata_list.append(entry_index_2 - 1)
             entry_index_2 += 2
+            subsequent_entry = split_line[entry_index_2]
         
         # Update the list harbouring the row entries along with the
         # delimiters by replacing commata with tab stops at the
         # corresponding positions
         for comma_index in line_comma_indices:
             if comma_index not in entry_commata_list:
-                split_line[comma_index] != "\t"
+                split_line[comma_index] = "\t"
         
         # Finally, the entries in the updated row list are concatenated
         # and the resulting string is written to the file
