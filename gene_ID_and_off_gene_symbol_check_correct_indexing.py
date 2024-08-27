@@ -81,7 +81,6 @@ subset_gene_IDs = np.unique(csv_df.loc[
 ])
 
 for gene_ID in subset_gene_IDs:
-    print(gene_ID)# to be removed afterwards
     # Query NCBI's gene database with the Gene ID currently dealt with
     # Code execution is suspended for one second in order to avoid
     # server-side errors
@@ -127,7 +126,6 @@ for gene_ID in subset_gene_IDs:
     # Hence, modifications to the DataFrame are only done in the case of
     # such records
     if ID_change_str in NCBI_entry_str:
-        print("A replaced record is encountered!") # to be replaced afterwards
         # The respective record has been replaced altogether with a new
         # ID
         # Hence, the new ID is retrieved and used to query NCBI's gene
