@@ -144,7 +144,7 @@ for i, row in main_csv_df.iterrows():
             # The new ID is comprised in the penultimate list element
             # and conveniently enough separated from the preceding
             # string by a space character
-            new_gene_ID = NCBI_entry_str_list[-1].split()[-1]
+            new_gene_ID = NCBI_entry_str_list[-2].split()[-1]
             main_csv_df.at[i, "ID"] = new_gene_ID
             main_csv_df.at[i, "ID_manufacturer"] = new_gene_ID
 
