@@ -140,6 +140,9 @@ for gene_ID in subset_gene_IDs:
         # conveniently enough separated from the preceding string by a
         # space character
         new_gene_ID = NCBI_entry_str_list[-2].split()[-1]
+        # As the gene ID currently dealt with may well occur outside the
+        # subset, the gene ID update is conducted for the entire data
+        # set
         csv_df.loc[
             csv_df["ID_manufacturer"] == gene_ID,
             ["ID", "ID_manufacturer"]
@@ -177,6 +180,8 @@ for gene_ID in subset_gene_IDs:
         # encompasses three characters
         official_gene_symbol = NCBI_entry_str_list[0][3:]
 
+        # Again, the official gene symbol update is performed for the
+        # entire data set
         csv_df.loc[
             csv_df["ID_manufacturer"] == new_gene_ID,
             "Name"
