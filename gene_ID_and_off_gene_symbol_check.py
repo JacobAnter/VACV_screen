@@ -116,6 +116,7 @@ for i, row in main_csv_df.iterrows():
                 "Database query wasn't successful for the gene "
                 f"{gene_name} with gene ID {NCBI_Gene_ID}."
             )
+            continue
 
         # As the file_name is specified to be None, Biotite's
         # fetch_single_file() function returns a StringIO object
@@ -168,6 +169,7 @@ for i, row in main_csv_df.iterrows():
                     "Querying the database wasn't successful for the "
                     f"updated gene ID {new_gene_ID} (gene {gene_name})."
                 )
+                continue
 
             NCBI_entry_str = NCBI_entry.getvalue()
             NCBI_entry_str_list = NCBI_entry_str.split("\n")
