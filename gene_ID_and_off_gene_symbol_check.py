@@ -296,13 +296,6 @@ def update_gene_ID_and_off_gene_symbol(csv_df):
         # Remove any blank lines represented by empty strings
         while "" in individual_entries_list:
             individual_entries_list.remove("")
-        
-        # to be removed afterwards
-        assert len(multi_gene_ID_list) == len(individual_entries_list), (
-            "There is an implementation error regarding the extraction "
-            "of the individual NCBI entries in the case of multi-gene IDs."
-        )
-        print("Cool, the assert statement evaluated to True!")
 
         updated_multi_gene_ID_list = []
         updated_off_gene_symbol_list = []
@@ -489,12 +482,10 @@ column_names = csv_df.columns.to_list()
 insertion_index = column_names.index("ID_manufacturer") + 1
 csv_df.insert(insertion_index, "Withdrawn_by_NCBI", "No")
 
-update_gene_ID_and_off_gene_symbol()
-
-exit()
+updated_csv_df = update_gene_ID_and_off_gene_symbol(csv_df)
 
 # As a last step, save the new Pandas DataFrame to a new CSV file
-main_csv_df.to_csv(
+updated_csv_df.to_csv(
     "Vaccinia_Report_NCBI_Gene_IDs_and_official_gene_symbols_updated.csv",
     # Bear in mind that if a different separator than the default one
     # (comma) is desired, specifying the desired separator is also
