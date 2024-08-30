@@ -78,6 +78,10 @@ def update_gene_ID_and_off_gene_symbol(csv_df):
         "ID_manufacturer"
     ].unique()
 
+    discontinuation_str = "This record was discontinued."
+    ID_change_str = "This record was replaced with GeneID:"
+
+
     for single_gene_ID in single_gene_IDs:
         # Query NCBI's gene database with the Gene ID currently dealt
         # with
@@ -126,9 +130,6 @@ def update_gene_ID_and_off_gene_symbol(csv_df):
         # the official gene symbol was altered, whereas the NCBI Gene ID
         # remained unchanged, or the record has been replaced altogether
         # with an entirely new ID
-        discontinuation_str = "This record was discontinued."
-        ID_change_str = "This record was replaced with GeneID:"
-
         if ID_change_str in NCBI_entry_str:
             # The respective record has been replaced altogether with a
             # new ID
@@ -301,6 +302,7 @@ def update_gene_ID_and_off_gene_symbol(csv_df):
             "There is an implementation error regarding the extraction "
             "of the individual NCBI entries in the case of multi-gene IDs."
         )
+        print("Cool, the assert statement evaluated to True!")
 
         updated_multi_gene_ID_list = []
         updated_off_gene_symbol_list = []
@@ -419,6 +421,7 @@ def update_gene_ID_and_off_gene_symbol(csv_df):
     
     return csv_df
 
+
 # Two columns of interest for the following endeavour are "ID" as well
 # as "ID_manufacturer"
 # Upon closer scrutiny, it became apparent that contrary to their names,
@@ -486,7 +489,7 @@ column_names = csv_df.columns.to_list()
 insertion_index = column_names.index("ID_manufacturer") + 1
 csv_df.insert(insertion_index, "Withdrawn_by_NCBI", "No")
 
-update_gene_ID_and_off_gene_symbol(csv_df)
+update_gene_ID_and_off_gene_symbol()
 
 exit()
 
