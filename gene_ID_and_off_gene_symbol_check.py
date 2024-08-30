@@ -28,6 +28,8 @@ def update_gene_ID_and_off_gene_symbol(csv_df):
     over each and every line of the DataFrame. Instead, the fact that
     many gene IDs occur multiple times is leveraged by iterating over
     the gene IDs and thereby modifying multiple rows at once.
+    4.) Some rows contain multiple gene IDs separated by semicola. A
+    separate procedure has been implemented for those multi-gene IDs.
 
     Parameters
     ----------
