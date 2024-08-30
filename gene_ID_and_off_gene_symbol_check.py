@@ -16,11 +16,18 @@ def update_gene_ID_and_off_gene_symbol(csv_df):
     IDs. In the second step, rows harbouring multiple gene IDs and
     accordingly gene names are addressed.
 
-    The function takes the following issues/mistakes made previously
-    into account:
-    1.) ...
-    2.) ...
-    3.) ...
+    The function takes the issues/mistakes made previously into account
+    via the following corrections:
+    1.) `continue` statements have been introduced after failed database
+    queries.
+    2.) In the case of records having been replaced altogether with a
+    new one, indexing has been corrected such that following the
+    splitting of the entry string, the penultimate, i.e. second to last
+    list element is retrieved.
+    3.) In an effort to reduce the execution time, it is not iterated
+    over each and every line of the DataFrame. Instead, the fact that
+    many gene IDs occur multiple times is leveraged by iterating over
+    the gene IDs and thereby modifying multiple rows at once.
 
     Parameters
     ----------
@@ -197,6 +204,7 @@ def update_gene_ID_and_off_gene_symbol(csv_df):
                 csv_df["ID_manufacturer"] == new_gene_ID,
                 "Name"
             ] = official_gene_symbol
+
         else:
             # The gene ID remained unchanged, while the official gene
             # name may well have been changed
