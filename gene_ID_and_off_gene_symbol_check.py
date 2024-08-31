@@ -30,6 +30,8 @@ def update_gene_ID_and_off_gene_symbol(csv_df):
     the gene IDs and thereby modifying multiple rows at once.
     4.) Some rows contain multiple gene IDs separated by semicola. A
     separate procedure has been implemented for those multi-gene IDs.
+    5.) It is kept track of whether NCBI records are still valid or have
+    been discontinued via the "Withdrawn_by_NCBI" column.
 
     Parameters
     ----------
