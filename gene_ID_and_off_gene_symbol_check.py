@@ -32,6 +32,10 @@ def update_gene_ID_and_off_gene_symbol(csv_df):
     separate procedure has been implemented for those multi-gene IDs.
     5.) It is kept track of whether NCBI records are still valid or have
     been discontinued via the "Withdrawn_by_NCBI" column.
+    6.) The values of the "Name" column are standardised by iterating
+    over gene IDs present in the single/pooled siRNA and esiRNA subset,
+    but modifying all rows in the CSV file having the respective gene
+    ID.
 
     Parameters
     ----------
