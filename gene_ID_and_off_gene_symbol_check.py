@@ -1,5 +1,6 @@
 import time
 
+import numpy as np
 import pandas as pd
 from biotite.database import entrez
 
@@ -7,9 +8,12 @@ from biotite.database import entrez
 # functions are defined
 def update_gene_ID_and_off_gene_symbol(csv_df):
     """
-    Perform NCBI Gene database queries for selected gene IDs in a Pandas
-    DataFrame and update both the gene ID and the official gene symbol
-    in case of alterations.
+    Performs NCBI Gene database queries for selected gene IDs in a
+    Pandas DataFrame and updates both the gene ID and the official gene
+    symbol in case of alterations. The gene IDs to perform the query
+    with are confined to the single/pooled siRNA and esiRNA subset (i.e.
+    rows having as "WellType" value "SIRNA", "POOLED_SIRNA" or
+    "ESIRNA").
 
     The gene ID and official gene symbol update is accomplished in two
     steps. The first step consists of exclusively updating single gene
@@ -422,6 +426,276 @@ def update_gene_ID_and_off_gene_symbol(csv_df):
     
     return csv_df
 
+
+def _query_NCBI_Gene_database_for_single_gene_IDs(
+        csv_df, single_gene_IDs
+):
+    """
+    Performs NCBI Gene Database queries for single gene IDs and updates
+    both the gene ID and the official gene symbol in case of
+    alterations.
+
+    Parameters
+    ----------
+    csv_df: Pandas DataFrame
+        A Pandas DataFrame harbouring gene IDs in conjunction with the
+        corresponding gene names. It is assumed that the gene IDs are
+        stored in the "ID_manufacturer" column, whereas the gene names
+        are contained in the "Name" column. The DataFrame is also
+        expected to comprise a column named "Withdrawn_by_NCBI", the
+        purpose of which is to keep track of withdrawn NCBI records.
+    
+    single_gene_IDs: iterable
+        An iterable harbouring the single gene IDs to perform database
+        queries with.
+
+    Returns
+    -------
+    csv_df: Pandas DataFrame
+        The updated Pandas DataFrame, i.e. it contains the updated gene
+        ID and/or gene name in case of corresponding alterations.
+    """
+
+    ID_change_str = "This record was replaced with GeneID:"
+    discontinuation_str = "This record was discontinued."
+
+    for single_gene_ID in single_gene_IDs:
+        # Query NCBI's gene database with the Gene ID currently dealt
+        # with
+        # Code execution is suspended for one second in order to avoid
+        # server-side errors
+        time.sleep(1)
+        # As simply suspending code execution for a couple of seconds
+        # unfortunately does not prevent the occurrence of errors
+        # altogether, a try/except statement is incorporated retrying
+        # the dabase query for three times in total
+        for _ in range(3):
+            try:
+                NCBI_entry = entrez.fetch_single_file(
+                    uids=[single_gene_ID],
+                    file_name=None,
+                    db_name="gene",
+                    ret_type="",
+                    ret_mode="text"
+                )
+                break
+            except:
+                time.sleep(1)
+        else:
+            print(
+                "Database query wasn't successful for the single gene "
+                f"ID {single_gene_ID}."
+            )
+            continue
+
+        # As the file_name is specified to be None, Biotite's
+        # fetch_single_file() function returns a StringIO object
+        # It's content can be accessed via the getvalue() method
+        # Note that the getvalue() method is preferred to the read()
+        # method as the latter moves the cursor to the last index so
+        # that repeatedly using the read() method returns an empty
+        # string
+        NCBI_entry_str = NCBI_entry.getvalue()
+
+        # Different approaches are necessary depending on whether merely
+        # the official gene symbol was altered, whereas the NCBI Gene ID
+        # remained unchanged, or the record has been replaced altogether
+        # with an entirely new ID
+        if ID_change_str in NCBI_entry_str:
+            # The respective record has been replaced altogether with a
+            # new ID
+            # Hence, the new ID is retrieved and used to query NCBI's
+            # gene database
+            NCBI_entry_str_list = NCBI_entry_str.split("\n")
+
+            # For some strange reason, the string retrieved from the
+            # NCBI entry contains blank lines; they are removed
+            while "" in NCBI_entry_str_list:
+                NCBI_entry_str_list.remove("")
+            
+            # The new ID is comprised in the penultimate list element
+            # and conveniently enough separated from the preceding
+            # string by a space character
+            new_gene_ID = NCBI_entry_str_list[-2].split()[-1]
+            # As the gene ID currently dealt with may well occur outside
+            # the subset, the gene ID update is conducted for the entire
+            # data set; the same applies to the other updates later for
+            # the "Withdrawn_by_NCBI" and "Name" columns
+            csv_df.loc[
+                csv_df["ID_manufacturer"] == single_gene_ID,
+                ["ID", "ID_manufacturer"]
+            ] = new_gene_ID
+
+            # Again, in a bid to prevent the occurrence of server-side
+            # errors, code execution is suspended for one second
+            time.sleep(1)
+            for _ in range(3):
+                try:
+                    NCBI_entry = entrez.fetch_single_file(
+                        uids=[new_gene_ID],
+                        file_name=None,
+                        db_name="gene",
+                        ret_type="",
+                        ret_mode="text"
+                    )
+                    break
+                except:
+                    time.sleep(1)
+            else:
+                print(
+                    "Querying the database wasn't successful for the "
+                    f"updated gene ID {new_gene_ID} (formerly gene ID "
+                    f"{single_gene_ID})."
+                )
+                continue
+            
+            NCBI_entry_str = NCBI_entry.getvalue()
+            if discontinuation_str in NCBI_entry_str:
+                csv_df.loc[
+                    # Bear in mind that the values in "ID_manufacturer"
+                    # have just been changed; hence, the old value must
+                    # not be used in the equality check!
+                    csv_df["ID_manufactuer"] == new_gene_ID,
+                    "Withdrawn_by_NCBI"
+                ] = "Yes"
+            
+            NCBI_entry_str_list = NCBI_entry_str.split("\n")
+            while "" in NCBI_entry_str_list:
+                NCBI_entry_str_list.remove("")
+
+            # The official gene symbol is comprised in the first list
+            # element, but is preceded by the string "1. ", which
+            # encompasses three characters
+            official_gene_symbol = NCBI_entry_str_list[0][3:]
+
+            csv_df.loc[
+                csv_df["ID_manufacturer"] == new_gene_ID,
+                "Name"
+            ] = official_gene_symbol
+            pass
+
+        else:
+            # The gene ID remained unchanged, while the official gene
+            # name may well have been changed
+            # As the gene ID currently dealt with may well occur outside
+            # the subset, the discontinuation state update is conducted
+            # for the entire data set; the same applies to the other
+            # updates later for the "Name" and "ID" columns
+            if discontinuation_str in NCBI_entry_str:
+                csv_df.loc[
+                    csv_df["ID_manufacturer"] == single_gene_ID,
+                    "Withdrawn_by_NCBI"
+                ] = "Yes"
+            
+            # Remove blank lines from the string retrieved from the NCBI
+            # entry
+            NCBI_entry_str_list = NCBI_entry_str.split("\n")
+            while "" in NCBI_entry_str_list:
+                NCBI_entry_str_list.remove("")
+            
+            # Following the removal of empty strings, the official gene
+            # symbol is represented by the first list element, but it is
+            # preceded by the string "1. ", which encompasses three
+            # characters
+            # Hence, the first list element has to be sliced accordingly
+            official_gene_symbol = NCBI_entry_str_list[0][3:]
+            csv_df.loc[
+                csv_df["ID_manufacturer"] == single_gene_ID,
+                "Name"
+            ] = official_gene_symbol
+
+            # Also populate the corresponding cells of the "ID" feature
+            # with the NCBI Gene ID (remember that cells of the "ID"
+            # feature are not continuously populated)
+            csv_df.loc[
+                csv_df["ID_manufacturer"] == single_gene_ID,
+                "ID"
+            ] = single_gene_ID
+
+    return csv_df
+
+
+def mend_error_messages_single_IDs(csv_df):
+    """
+    Performs NCBI Gene database queries for single gene IDs an error
+    message has been assigned to as "Name" value. In total, three
+    different error messages are covered, two of which contain
+    "External+viewer+error" as common substring.
+
+    Instead of iterating over each affected row individually, this
+    function pursues a more intelligent approach consisting of iterating
+    over the unique gene IDs of the affected rows. Again, the fact that
+    many gene IDs occur multiple times throughout the CSV file is
+    leveraged in order to achieve a reduction of run time.
+
+    As one run usually does not mend all error messages, which is why
+    the procedure is repeated until this indeed is the case.
+
+    Parameters
+    ----------
+    csv_df: Pandas DataFrame
+        A Pandas DataFrame having error messages as values of its "Name"
+        column for single gene IDs. Note that only the three
+        abovementioned error messages are covered.
+
+    Returns
+    -------
+    csv_df: Pandas DataFrame
+        The Pandas DataFrame provided as input, but with correctly
+        retrieved official gene symbols where the error messages
+        occurred.
+    """
+
+    n_error_message_rows = np.count_nonzero(
+        csv_df["Name"].str.contains(
+            "External+viewer+error",
+            regex=False
+        )
+        |
+        csv_df["Name"].str.contains(
+            "OCTYPE html PUBLIC",
+            regex=False
+        )
+    )
+
+    assert n_error_message_rows > 0, (
+        "The Pandas DataFrame provided as input does not contain any "
+        "error messages as \"Name\" value or at least none of the "
+        "error messages covered by this function."
+    )
+
+    # As a first step, retrieve the unique gene IDs of rows having error
+    # messages as "Name" value
+    unique_gene_IDs_error_message_rows = csv_df.loc[
+        csv_df["Name"].str.contains(
+            "External+viewer+error",
+            regex=False
+        )
+        |
+        csv_df["Name"].str.contains(
+            "OCTYPE html PUBLIC",
+            regex=False
+        )
+    ]["ID_manufacturer"].unique()
+
+    while n_error_message_rows > 0:
+        csv_df = _query_NCBI_Gene_database_for_single_gene_IDs(
+            csv_df, unique_gene_IDs_error_message_rows
+        )
+
+        n_error_message_rows = np.count_nonzero(
+            csv_df["Name"].str.contains(
+                "External+viewer+error",
+                regex=False
+            )
+            |
+            csv_df["Name"].str.contains(
+                "OCTYPE html PUBLIC",
+                regex=False
+            )
+        )
+
+    return csv_df
 
 # Two columns of interest for the following endeavour are "ID" as well
 # as "ID_manufacturer"
