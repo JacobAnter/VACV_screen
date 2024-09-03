@@ -1,6 +1,6 @@
 import pandas as pd
 
-from database_query_utils import update_gene_ID_and_off_gene_symbol
+from CSV_file_utils import update_gene_ID_and_off_gene_symbol
 
 # Two columns of interest for the following endeavour are "ID" as well
 # as "ID_manufacturer"
