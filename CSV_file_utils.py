@@ -696,3 +696,139 @@ def mend_error_messages_single_IDs(csv_df):
         )
 
     return csv_df
+
+
+def extract_valid_and_named_targets_from_df(csv_df):
+    """
+    Extracts from a Pandas DataFrame those targets that are known and
+    still valid. The function takes account of the fact that there are
+    rows containing multiple gene IDs, i.e. multiple targets. It is
+    assumed that the Pandas DataFrame contains a column named
+    "Withdrawn_by_NCBI" based upon which the distinction between valid
+    and invalid targets is performed. It is also assumed to have columns
+    termed "ID", "ID_manufacturer" and "Name".
+
+    Parameters
+    ----------
+    csv_df: Pandas DataFrame
+        A Pandas DataFrame invalid and unnamed targets are supposed to
+        be removed from.
+
+    Returns
+    -------
+    csv_df: Pandas DataFrame
+        The Pandas DataFrame provided as input, but with invalid as well
+        as unnammed targets having been removed.
+    """
+
+    # As a first step, remove targets the "ID_manufacturer" value of
+    # which is "Not available"
+    csv_df = csv_df.loc[
+        # Bear in mind that due to operator precedence, i.e. the logical
+        # AND (&) being evaluated before the equality check, the
+        # equality check has to be surrounded by parentheses
+        csv_df["ID_manufacturer"] != "Not available"
+    ]
+
+    # As a second step, remove rows containing single invalid IDs
+    # To this end, the fact that the "Withdrawn_by_NCBI" value of such
+    # rows equals exactly "Yes" is leveraged
+    csv_df = csv_df.loc[
+        ~(csv_df["Withdrawn_by_NCBI"] == "Yes")
+    ]
+
+    # As a third step, remove rows containing multiple exclusively
+    # invalid IDs
+    # The rationale behind the selection below is as follows: First, the
+    # rows to get rid of are chosen by selecting rows containing
+    # multiple IDs and rows not comprising "No" in their
+    # "Withdrawn_by_NCBI" value; ultimately, the resulting Boolean
+    # Series represents all rows containing multiple exclusively invalid
+    # IDs
+    # Finally, this Boolean Series is inverted by the tilde operator so
+    # as to discard those rows while retaining all others
+    csv_df = csv_df.loc[
+        ~(
+            csv_df["ID_manufacturer"].str.contains(";")
+            &
+            (~csv_df["Withdrawn_by_NCBI"].str.contains("No"))
+        )
+    ]
+
+    # Finally, address the rows containing multiple gene IDs and
+    # therefore multiple targets
+    # Again, multiple rows are modified at once by leveraging the fact
+    # that also many combinations of gene IDs occur multiple times
+    # throughout the CSV file
+    unique_multi_target_ids = csv_df.loc[
+        # Of the rows containing multiple targets, only those are
+        # addressed containing at least one invalid target
+        csv_df["ID_manufacturer"].str.contains(";")
+        &
+        # Choosing rows the "Withdrawn_by_NCBI" value of which contains
+        # "Yes" is still necessary as there is the possibility that all
+        # IDs in one row are valid (i.e. have not been withdrawn and are
+        # therefore represented by "No")
+        csv_df["Withdrawn_by_NCBI"].str.contains("Yes"),
+        "ID_manufacturer"
+    ].unique()
+
+    for ids in unique_multi_target_ids:
+        # For one specific ID, the values in one column are always the
+        # same
+        # Hence, for each column, simply the first entry is retrieved
+        # In order to access elements of a Pandas series based on their
+        # position, i.e. in the same way one would index a list, `.iloc`
+        # is required
+        withdrawn_string = csv_df.loc[
+            csv_df["ID_manufacturer"] == ids, "Withdrawn_by_NCBI"
+        ].iloc[0]
+        
+        ID_string = csv_df.loc[
+            csv_df["ID_manufacturer"] == ids, "ID"
+        ].iloc[0]
+
+        name_string = csv_df.loc[
+            csv_df["ID_manufacturer"] == ids, "Name"
+        ].iloc[0]
+
+        withdrawn_list = withdrawn_string.split(";")
+        ID_list = ID_string.split(";")
+        ID_manufacturer_list = ids.split(";")
+        name_list = name_string.split(";")
+
+        while "Yes" in withdrawn_list:
+            invalid_idx = withdrawn_list.index("Yes")
+
+            withdrawn_list.pop(invalid_idx)
+            ID_list.pop(invalid_idx)
+            ID_manufacturer_list.pop(invalid_idx)
+            name_list.pop(invalid_idx)
+        
+        # Following the removal of invalid targets, the list entries are
+        # concatenated again and the respective fields in the DataFrame
+        # are updated
+        withdrawn_string = ";".join(withdrawn_list)
+        ID_string = ";".join(ID_list)
+        ID_manufacturer_string = ";".join(ID_manufacturer_list)
+        name_string = ";".join(name_list)
+
+        # Now, modify multiple rows at once by leveraging the
+        # "ID_manufacturer" value
+        # The "ID_manufacturer" entries are modified last so as to be
+        # able to continuously use the original value for row
+        # specification
+        csv_df.loc[
+            csv_df["ID_manufacturer"] == ids, "Withdrawn_by_NCBI"
+        ] = withdrawn_string
+        csv_df.loc[
+            csv_df["ID_manufacturer"] == ids, "ID"
+        ] = ID_string
+        csv_df.loc[
+            csv_df["ID_manufacturer"] == ids, "Name"
+        ] = name_string
+        csv_df.loc[
+            csv_df["ID_manufacturer"] == ids, "ID_manufacturer"
+        ] = ID_manufacturer_string
+
+    return csv_df
