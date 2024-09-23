@@ -32,7 +32,7 @@ def update_gene_ID_and_off_gene_symbol(csv_df):
     over each and every line of the DataFrame. Instead, the fact that
     many gene IDs occur multiple times is leveraged by iterating over
     the gene IDs and thereby modifying multiple rows at once.
-    4.) Some rows contain multiple gene IDs separated by semicola. A
+    4.) Some rows contain multiple gene IDs separated by semicolons. A
     separate procedure has been implemented for those multi-gene IDs.
     5.) It is kept track of whether NCBI records are still valid or have
     been discontinued via the "Withdrawn_by_NCBI" column.
@@ -258,8 +258,8 @@ def update_gene_ID_and_off_gene_symbol(csv_df):
     
 
     for multi_gene_ID in multiple_gene_IDs:
-        # The gene IDs are concatenated into one string with semicola as
-        # separator
+        # The gene IDs are concatenated into one string with semicolons
+        # as separator
         # In order to pass them all at once into the database query,
         # the string is converted into a comma-separated list
         multi_gene_ID_list = multi_gene_ID.split(";")
@@ -832,3 +832,53 @@ def extract_valid_and_named_targets_from_df(csv_df):
         ] = ID_manufacturer_string
 
     return csv_df
+
+
+def determine_coverage(pd_df):
+    """
+    Determine the amount of individual genes covered by the Pandas
+    DataFrame passed as input.
+
+    This function accommodates the fact that some entries may contain
+    multiple genes separated from each other by semicolons.
+
+    Parameters
+    ----------
+    pd_df: Pandas DataFrame
+        A Pandas DataFrame assumed to harbour a column called
+        "ID_manufacturer". The gene IDs comprised in this column are
+        used to compute the gene coverage.
+
+    Returns
+    -------
+    coverage: int
+        The amount of individual genes covered by the Pandas DataFrame
+        passed as input.
+    """
+
+    # Take into account the fact that both single and multiple IDs are
+    # present, i.e. entries representing only one ID and entries
+    # representing multiple IDs separated by semicolons
+    # Extract those two types of entries separately
+    single_ids = pd_df[
+        ~pd_df["ID_manufacturer"].str.contains(";")
+    ]["ID_manufacturer"].to_list()
+    multiple_ids = pd_df[
+        pd_df["ID_manufacturer"].str.contains(";")
+    ]["ID_manufacturer"].to_list()
+
+    # Now, split the multiple entries into the individual IDs
+    # As the unpacking operator (asterisk) cannot be used in list
+    # comprehensions, unpacking is accomplished via a nested list
+    # comprehension
+    split_multiple_ids = [
+        single_id for multi_id in multiple_ids for single_id
+        in multi_id.split(";")
+    ]
+
+    all_ids_split = single_ids + split_multiple_ids
+    unique_ids = np.unique(all_ids_split)
+
+    coverage = len(unique_ids)
+
+    return coverage
