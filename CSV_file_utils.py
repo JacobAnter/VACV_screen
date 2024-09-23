@@ -840,7 +840,9 @@ def determine_coverage(pd_df):
     DataFrame passed as input.
 
     This function accommodates the fact that some entries may contain
-    multiple genes separated from each other by semicolons.
+    multiple genes separated from each other by semicolons. However, as
+    all genes occurring in composite entries also occur individually,
+    they are not treated in a special manner.
 
     Parameters
     ----------
