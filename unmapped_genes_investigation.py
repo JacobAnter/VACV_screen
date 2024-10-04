@@ -104,6 +104,21 @@ def investigate_unmapped_gene_names(pandas_df):
                     ret_type="",
                     ret_mode="xml"
                 )
+
+                # As the file_name is specified to be None, Biotite's
+                # fetch_single_file() function returns a StringIO object
+                # It's content can be accessed via the getvalue() method
+                # Note that the getvalue() method is preferred to the
+                # read() method as the latter moves the cursor to the
+                # last index so that repeatedly using the read() method
+                # returns an empty string
+                NCBI_entry_str = NCBI_entry.getvalue()
+
+                # It sometimes happens that the queried information is
+                # incompletely transmitted
+                # In such a case, the query has to be repeated
+                assert "<Entrezgene_type value=" in NCBI_entry_str
+
                 break
             except:
                 time.sleep(1)
@@ -114,14 +129,6 @@ def investigate_unmapped_gene_names(pandas_df):
             )
             continue
         
-        # As the file_name is specified to be None, Biotite's
-        # fetch_single_file() function returns a StringIO object
-        # It's content can be accessed via the getvalue() method
-        # Note that the getvalue() method is preferred to the read()
-        # method as the latter moves the cursor to the last index so
-        # that repeatedly using the read() method returns an empty
-        # string
-        NCBI_entry_str = NCBI_entry.getvalue()
         NCBI_entry_str_list = NCBI_entry_str.split("\n")
         
         # Determine the index of the line containing the desired
@@ -149,7 +156,17 @@ def investigate_unmapped_gene_names(pandas_df):
                 &
                 uniprot.SimpleQuery("organism_id", "9606")
             )
-            ids = _query_uniprot_database(gene_name, query)
+            # On the one hand, Biotite's SimpleQuery() class does not
+            # allow query terms to contain the following strings in
+            # capital letters, amongst others: "AND", "OR", "NOT"
+            # On the other hand, the UniProt database is
+            # case-insensitive, i.e. the search results are invariant to
+            # whether the query contains uppercase or lowercase letters
+            # As some of the forbidden strings do occur in the gene
+            # names to query, all letters in the gene name are converted
+            # to lowercase letters prior to the query
+            gene_name_for_query = gene_name.lower()
+            ids = _query_uniprot_database(gene_name_for_query, query)
 
             if ids == "Query failed":
                 continue
@@ -169,7 +186,8 @@ def investigate_unmapped_gene_names(pandas_df):
                 &
                 uniprot.SimpleQuery("organism_id", "9606")
             )
-            ids = _query_uniprot_database(gene_name, query)
+            gene_name_for_query = gene_name.lower()
+            ids = _query_uniprot_database(gene_name_for_query, query)
 
             if ids == "Query failed":
                 continue
