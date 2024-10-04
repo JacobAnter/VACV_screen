@@ -151,11 +151,6 @@ def investigate_unmapped_gene_names(pandas_df):
             # To this end, the UniProt database is queried
             # The gene name and organism ID are used for the query; the
             # organism ID for Homo sapiens is 9606
-            query = (
-                uniprot.SimpleQuery("gene_exact", gene_name)
-                &
-                uniprot.SimpleQuery("organism_id", "9606")
-            )
             # On the one hand, Biotite's SimpleQuery() class does not
             # allow query terms to contain the following strings in
             # capital letters, amongst others: "AND", "OR", "NOT"
@@ -166,7 +161,14 @@ def investigate_unmapped_gene_names(pandas_df):
             # names to query, all letters in the gene name are converted
             # to lowercase letters prior to the query
             gene_name_for_query = gene_name.lower()
-            ids = _query_uniprot_database(gene_name_for_query, query)
+
+            query = (
+                uniprot.SimpleQuery("gene_exact", gene_name_for_query)
+                &
+                uniprot.SimpleQuery("organism_id", "9606")
+            )
+            
+            ids = _query_uniprot_database(gene_name, query)
 
             if ids == "Query failed":
                 continue
@@ -181,13 +183,15 @@ def investigate_unmapped_gene_names(pandas_df):
             
             # Investigate whether there indeed is no UniProt entry for
             # this gene
+            gene_name_for_query = gene_name.lower()
+
             query = (
-                uniprot.SimpleQuery("gene_exact", gene_name)
+                uniprot.SimpleQuery("gene_exact", gene_name_for_query)
                 &
                 uniprot.SimpleQuery("organism_id", "9606")
             )
-            gene_name_for_query = gene_name.lower()
-            ids = _query_uniprot_database(gene_name_for_query, query)
+            
+            ids = _query_uniprot_database(gene_name, query)
 
             if ids == "Query failed":
                 continue
