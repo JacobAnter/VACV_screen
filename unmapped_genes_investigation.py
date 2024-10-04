@@ -13,7 +13,7 @@ import pandas as pd
 from biotite.database import entrez
 from biotite.database import uniprot
 
-def _query_uniprot_database(gene_name, query):
+def _uniprot_database_search(gene_name, query):
     """
     ...
 
@@ -168,7 +168,7 @@ def investigate_unmapped_gene_names(pandas_df):
                 uniprot.SimpleQuery("organism_id", "9606")
             )
             
-            ids = _query_uniprot_database(gene_name, query)
+            ids = _uniprot_database_search(gene_name, query)
 
             if ids == "Query failed":
                 continue
@@ -191,7 +191,7 @@ def investigate_unmapped_gene_names(pandas_df):
                 uniprot.SimpleQuery("organism_id", "9606")
             )
             
-            ids = _query_uniprot_database(gene_name, query)
+            ids = _uniprot_database_search(gene_name, query)
 
             if ids == "Query failed":
                 continue
