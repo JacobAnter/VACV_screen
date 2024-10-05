@@ -94,7 +94,7 @@ for i, id_str in enumerate(multi_mappings_df["UniProt_IDs_list"]):
         gene_info = first_line_split[gene_idx][3:]
 
         if gene_info != gene_name:
-            ids_to_omit.append(gene_info)
+            ids_to_omit.append(UniProt_ID)
     
     # Update the "UniProt_IDs_to_omit" value of the gene currently dealt
     # with
