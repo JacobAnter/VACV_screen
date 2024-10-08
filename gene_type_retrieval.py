@@ -63,13 +63,13 @@ for i, gene_ID in enumerate(gene_type_df["Gene_ID"]):
 
     if "ncRNA" in gene_type_line:
         gene_type_df.at[i, "Gene_type"] = "ncRNA"
-    if "pseudo" in gene_type_line:
+    elif "pseudo" in gene_type_line:
         gene_type_df.at[i, "Gene_type"] = "Pseudogene"
-    if "snoRNA" in gene_type_line:
+    elif "snoRNA" in gene_type_line:
         gene_type_df.at[i, "Gene_type"] = "snoRNA"
-    if "other" in gene_type_line:
+    elif "other" in gene_type_line:
         gene_type_df.at[i, "Gene_type"] = "other"
-    if "protein-coding" in gene_type_line:
+    elif "protein-coding" in gene_type_line:
         gene_type_df.at[i, "Gene_type"] = "Protein-coding"
     else:
         gene_IDs_with_types_not_covered.append(gene_ID)
