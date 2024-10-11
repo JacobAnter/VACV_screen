@@ -61,16 +61,18 @@ for i, gene_ID in enumerate(gene_type_df["Gene_ID"]):
     ][0]
     gene_type_line = NCBI_entry_str_list[gene_type_line_index]
 
-    if "ncRNA" in gene_type_line:
+    if "pseudo" in gene_type_line:
+        gene_type_df.at[i, "Gene_type"] = "pseudo"
+    elif "ncRNA" in gene_type_line:
         gene_type_df.at[i, "Gene_type"] = "ncRNA"
-    elif "pseudo" in gene_type_line:
-        gene_type_df.at[i, "Gene_type"] = "Pseudogene"
-    elif "snoRNA" in gene_type_line:
-        gene_type_df.at[i, "Gene_type"] = "snoRNA"
     elif "other" in gene_type_line:
         gene_type_df.at[i, "Gene_type"] = "other"
+    elif "snoRNA" in gene_type_line:
+        gene_type_df.at[i, "Gene_type"] = "snoRNA"
     elif "protein-coding" in gene_type_line:
-        gene_type_df.at[i, "Gene_type"] = "Protein-coding"
+        gene_type_df.at[i, "Gene_type"] = "protein-coding"
+    elif "unknown" in gene_type_line:
+        gene_type_df.at[i, "Gene_type"] = "unknown"
     else:
         gene_IDs_with_types_not_covered.append(gene_ID)
 
