@@ -149,10 +149,10 @@ def parse_DAVID_FAC_file(file_path, mapping_option="union"):
 
     # Extract the individual clusters via Boolean indexing
     # This requires determining the total amount of clusters
-    n_clusters = DAVID_FAC_df.index.to_list()[-1]
+    n_clusters = DAVID_FAC_df.index.to_list()[-1] + 1
     sub_df_list = [
         DAVID_FAC_df[DAVID_FAC_df.index == i]
-        for i in range(n_clusters + 1)
+        for i in range(n_clusters)
     ]
     
     # Initialising the output
@@ -213,8 +213,20 @@ def parse_DAVID_FAC_file(file_path, mapping_option="union"):
                 # Class names are comprised in the the second column
                 semicolon_index = annot_class_row["Column_2"].rfind(":")
                 tilde_index = annot_class_row["Column_2"].rfind("~")
-                pass
-            break
+                
+                if tilde_index > semicolon_index:
+                    class_name = annot_class_row[
+                        "Column_2"
+                    ].split("~")[-1]
+                else:
+                    class_name = annot_class_row[
+                        "Column_2"
+                    ].split(":")[-1]
+                
+                label_per_cluster.append(
+                    f"[{i + 1}] {class_name} "
+                    f"(E={current_enrichment_score:.1f})"
+                )
 
             # Retrieve the genes from the current cluster and add them
             # to the previous ones based on the method chosen by the
@@ -245,17 +257,37 @@ def parse_DAVID_FAC_file(file_path, mapping_option="union"):
             # Apart from that, the genes assigned to the individual
             # classes within an annotation cluster are kept track of
             genes_per_class_per_cluster[i].append(current_genes)
-            break
-        break
+        
+        # Now that all annotation classes (i.e. lines) of the current
+        # cluster have been iterated over, the total amount of genes in
+        # the current annotation cluster is determined and added to the
+        # class label
+        n_genes_current_cluster = len(genes_per_cluster[i])
+        label_per_cluster[i] += f" (n={n_genes_current_cluster})"
 
-    return
+    # Finally, compute the overlap map
+    overlap_map = np.zeros(shape=(n_clusters, n_clusters))
+    # Iterate over the rows of the overlap map and for each row, iterate
+    # over the columns
+    # This is done such that links of clustes to themselves are skipped
+    # and each link is processed only once
+    for i in range(n_clusters):
+        for j in range(i, n_clusters):
+            if i == j:
+                continue
 
+            # Compute the fraction of overlap as function of the
+            # smallest cluster size
+            overlap_fraction = len(
+                genes_per_cluster[i].intersection(genes_per_cluster[j])
+            ) / min(len(genes_per_cluster[i]), len(genes_per_cluster[j]))
+            
+            # Populate the overlap map
+            overlap_map[i, j] = overlap_fraction
+            overlap_map[j, i] = overlap_fraction
 
-if __name__ == "__main__":
-    some_path = (
-        "/Users/jacobanter/Documents/Projects/Project_A_safe/"
-        "VACV_screen/Related_works/RNAi_Screening_Reveals_Proteasome-"
-        "and_Cullin3-Dependent_Stages_in_Vaccinia_Virus_Infection/mmc3"
-        "/new_david_gene_symbols_high.txt"
+    return (
+        label_per_cluster, genes_per_cluster,
+        genes_per_class_per_cluster, enrichment_score_per_cluster,
+        overlap_map
     )
-    parse_DAVID_FAC_file(some_path)
