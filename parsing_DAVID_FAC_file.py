@@ -160,11 +160,17 @@ def parse_DAVID_FAC_file(file_path, mapping_option="union"):
     label_per_cluster = []
     genes_per_cluster = []
     genes_per_class_per_cluster = []
+
+    # Reset the index of all cluster DataFrames to the default integer
+    # index
+    sub_df_list = [
+        cluster_df.reset_index(drop=True) for cluster_df in sub_df_list
+    ]
     
     # Iterate over the individual annotation clusters
     for i, cluster_df in enumerate(sub_df_list):
-        # Add a new gene list for the new cluster
-        genes_per_cluster.append([])
+        # Add a new gene set and gene list for the new cluster
+        genes_per_cluster.append(set())
         genes_per_class_per_cluster.append([])
 
         # Extract the enrichment score; it is located in the very first
@@ -189,9 +195,56 @@ def parse_DAVID_FAC_file(file_path, mapping_option="union"):
         # Iterate over the rows of the cluster DataFrame from the third
         # row onwards as it is the first row containing annotation
         # classes
-        for _, annot_class_row in cluster_df.iloc[2:].iterrows():
-            class_genes = annot_class_row.iloc[5].split(", ")
-            print(class_genes)
+        for j, annot_class_row in cluster_df.iloc[2:].iterrows():
+            # As stated above, in case the third column of the header
+            # row is not populated with a custom cluster annotation, it
+            # is defaulted to taking the first (i.e. most enriched)
+            # annotation class as cluster label
+            # Bear in mind that due to DataFrame slicing, the first
+            # index is 2 rather than 0
+            if (len(label_per_cluster) != i + 1) and (j == 2):
+                # Class names have identifiers prepended to them we are
+                # not interested in
+                # Thus, they are removed by only selecting the portion
+                # following the last semicolon or tilde
+                # The `rfind` string method is preferred to `rindex` as
+                # the former merely returns -1 in case the substring is
+                # not found, whereas the latter throws an exception
+                # Class names are comprised in the the second column
+                semicolon_index = annot_class_row["Column_2"].rfind(":")
+                tilde_index = annot_class_row["Column_2"].rfind("~")
+                pass
+            break
+
+            # Retrieve the genes from the current cluster and add them
+            # to the previous ones based on the method chosen by the
+            # user (either "union", which is the default, or
+            # "intersection")
+            current_genes = annot_class_row.iloc[5].split(", ")
+            
+            if mapping_option == "union":
+                genes_per_cluster[i] = genes_per_cluster[i].union(
+                    current_genes
+                )
+            else:
+                # In the case of the "intersection" method, care must be
+                # taken as the gene set is initially empty and
+                # determining the intersection with an empty set returns
+                # an empty set
+                # Therefore, in the case of the first annotation class
+                # encountered, the genes comprised in the the class are
+                # merely added to the empty set instead of performing
+                # the intersection operation
+                if j == 0:
+                    genes_per_cluster[i] = set(current_genes)
+                else:
+                    genes_per_cluster[i].intersection_update(
+                        current_genes
+                    )
+            
+            # Apart from that, the genes assigned to the individual
+            # classes within an annotation cluster are kept track of
+            genes_per_class_per_cluster[i].append(current_genes)
             break
         break
 
