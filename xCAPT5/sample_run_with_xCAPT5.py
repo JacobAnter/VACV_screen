@@ -35,6 +35,21 @@ from xCAPT5_utils import (get_T5_model, read_fasta, get_embeddings,
 pair_path = "SENSE-PPI_test_prot_pairs.tsv"
 seq_path = "SENSE-PPI_test_prot_seqs.fasta"
 
+# The implementation provided by the authors expects the TSV file to
+# have a third column harbouring interaction labels (i.e. 1 for True and
+# 0 for False), irrespective of whether they are known or not
+# Therefore, in case the TSV used does not already possess a third
+# column, one is introduced having zero as its values
+pair_df = pd.read_csv(pair_path, sep="\t", header=None)
+if pair_df.shape[1] < 3:
+   pair_df["Label"] = 0
+   pair_df.to_csv(
+      pair_path,
+      sep="\t",
+      header=False,
+      index=False
+   )
+
 # Define the embedding type
 # Possible options include embeddings per residue (yields a Lx1024
 # matrix per protein with L being the protein's length) as well as
@@ -52,7 +67,7 @@ sec_struct = False
 sec_struct_path = "./protT5/output/ss3_preds.fasta"
 
 if per_residue:
-   embedding_path = per_protein_path
+   embedding_path = per_residue_path
 elif per_protein:
    embedding_path = per_protein_path
 
