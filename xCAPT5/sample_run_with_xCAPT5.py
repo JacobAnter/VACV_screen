@@ -287,10 +287,26 @@ model_.fit(X, y, verbose=False)
 y_pred = model_.predict_proba(X)
 y_true = y
 
-# Pickle the predictions, i.e. "preserve"/save them to a file via
-# serialisation
-# Bear in mind that the `with` context manager is preferred for the
-# purpose of working with files as it automatically takes care of
-# closing files, even in case of errors/exceptions
-with open("xCAPT5_predictions_array.pkl", "wb") as f:
-   pickle.dump(y_pred, f)
+# Save the prediction results to a TSV file
+# In the TSV file, the first and second column contains the first and
+# second interaction partner, respectively, whereas the third column
+# harbours the predicted probability
+# The `predict_proba` method of the xgboost library returns one 
+# probability for each class; in our case, there are two classes, i.e.
+# class 0 for no interaction and class 1 for interaction
+# However, we are exclusively interested in the probabilities for
+# belonging to class 1, which is why the returned array is sliced
+# accordingly
+results_df = pd.DataFrame(
+   data={
+      "protein_1": pair_dataframe["p1"],
+      "protein_2": pair_dataframe["p2"],
+      "interaction_probability": y_pred[:, 1]
+   }
+)
+
+results_df.to_csv(
+   "xCAPT5_interaction_probs_sample_run.tsv",
+   sep="\t",
+   index=False
+)
