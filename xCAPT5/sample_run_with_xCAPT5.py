@@ -24,6 +24,15 @@ from tqdm import tqdm
 from xCAPT5_utils import (get_T5_model, read_fasta, get_embeddings,
     save_embeddings, pad, leaky_relu, multi_cnn)
 
+# For some strange reason, Tensorflow is looking the wrong directories
+# for the CuDNN library (i.e. the libcudnn.so.8 file)
+# Therefore, in order to enable GPU usage, the CuDNN library has to be
+# manually loaded
+tf.load_library(
+  "/home/anter87/PPI_prediction/xCAPT5/xCAPT5_venv/lib/python3.8/site-"
+  "packages/nvidia/cudnn/lib/libcudnn.so.8"
+)
+
 # Conveniently enough, xCAPT5 requires the same input as SENSE-PPI, i.e.
 # a FASTA file encompassing all proteins as well as a TSV file listing
 # all interaction pairs to investigate
@@ -244,26 +253,6 @@ model_.load_model(checkpoint_xgboost)
 # Evaluate on the test data set with MCAPST5
 y_pred = model.predict(test_dataset)
 y_true = pair_dataframe['label'].values
-cm1=confusion_matrix(y_true, np.round(y_pred))
-acc = (cm1[0,0]+cm1[1,1])/(cm1[0,0]+cm1[0,1]+cm1[1,0]+cm1[1,1])
-spec= (cm1[0,0])/(cm1[0,0]+cm1[0,1])
-sens = (cm1[1,1])/(cm1[1,0]+cm1[1,1])
-prec=cm1[1,1]/(cm1[1,1]+cm1[0,1])
-rec=cm1[1,1]/(cm1[1,1]+cm1[1,0])
-f1 = 2 * (prec * rec) / (prec + rec)
-mcc = matthews_corrcoef(y_true, np.round(y_pred))
-
-prc = metrics.average_precision_score(y_true, y_pred)
-
-print("============= INFERENCE BY NEURAL NETWORK ===============")
-try:
-  auc = metrics.roc_auc_score(y_true, y_pred)
-  print(f'accuracy: {acc}, precision: {prec}, recall: {rec}, specificity: {spec}, f1-score: {f1}, mcc: {mcc}, auroc: {auc}, auprc: {prc} ')
-  print(str(acc) + "\t" + str(prec) + "\t" + str(rec) + "\t" + str(spec) + "\t" + str(f1) + "\t" + str(mcc)+"\t" + str(auc)  + "\t" + str(prc) + "\n")
-except ValueError:
-  print(f'accuracy: {acc}, precision: {prec}, recall: {rec}, specificity: {spec}, f1-score: {f1}, mcc: {mcc}, auroc: nan, auprc: {prc} ')
-  print(str(acc) + "\t" + str(prec) + "\t" + str(rec) + "\t" + str(spec) + "\t" + str(f1) + "\t" + str(mcc)+"\t nan"  + "\t" + str(prc) + "\n")
-
 
 # Fit XGBoost for learned representations from MCAPST5
 intermediate_layer_model = Model(inputs=model.input,outputs=model.get_layer(model.layers[-2].name).output)
@@ -295,28 +284,8 @@ model_.fit(X, y, verbose=False)
 
 
 # Evaluate on the test data set with MCAPST5-X
-y_pred = model_.predict(X)
+y_pred = model_.predict_proba(X)
 y_true = y
-cm1=confusion_matrix(y_true, np.round(y_pred))
-acc = (cm1[0,0]+cm1[1,1])/(cm1[0,0]+cm1[0,1]+cm1[1,0]+cm1[1,1])
-spec= (cm1[0,0])/(cm1[0,0]+cm1[0,1])
-sens = (cm1[1,1])/(cm1[1,0]+cm1[1,1])
-prec=cm1[1,1]/(cm1[1,1]+cm1[0,1])
-rec=cm1[1,1]/(cm1[1,1]+cm1[1,0])
-f1 = 2 * (prec * rec) / (prec + rec)
-mcc = matthews_corrcoef(y_true, np.round(y_pred))
-
-prc = metrics.average_precision_score(y_true, y_pred)
-
-print("============= INFERENCE BY HYBRID MODEL ===============")
-try:
-  auc = metrics.roc_auc_score(y_true, y_pred)
-  print(f'accuracy: {acc}, precision: {prec}, recall: {rec}, specificity: {spec}, f1-score: {f1}, mcc: {mcc}, auroc: {auc}, auprc: {prc} ')
-  print(str(acc) + "\t" + str(prec) + "\t" + str(rec) + "\t" + str(spec) + "\t" + str(f1) + "\t" + str(mcc)+"\t" + str(auc)  + "\t" + str(prc) + "\n")
-except ValueError:
-  print(f'accuracy: {acc}, precision: {prec}, recall: {rec}, specificity: {spec}, f1-score: {f1}, mcc: {mcc}, auroc: nan, auprc: {prc} ')
-  print(str(acc) + "\t" + str(prec) + "\t" + str(rec) + "\t" + str(spec) + "\t" + str(f1) + "\t" + str(mcc)+"\t nan"  + "\t" + str(prc) + "\n")
-
 
 # Pickle the predictions, i.e. "preserve"/save them to a file via
 # serialisation
