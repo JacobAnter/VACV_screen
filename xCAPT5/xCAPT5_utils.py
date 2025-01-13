@@ -5,11 +5,10 @@ import torch
 import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
-from tensorflow.keras.layers import (Dense, Input, Dropout, BatchNormalization, ReLU, LeakyReLU, Conv1D, GlobalMaxPooling1D, \
-    AveragePooling1D, MaxPooling1D, GlobalAveragePooling1D, concatenate, multiply, Bidirectional, LSTM, GRU, Flatten, PReLU, add, SpatialDropout1D)
-from tensorflow.keras.optimizers import SGD, Adam
+from tensorflow.keras.layers import (Dense, Input, Dropout, BatchNormalization, Conv1D, GlobalMaxPooling1D, \
+    AveragePooling1D, MaxPooling1D, GlobalAveragePooling1D, concatenate, SpatialDropout1D)
+from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.models import Model
-from tensorflow.keras.regularizers import l2, l1_l2
 from transformers import T5EncoderModel, T5Tokenizer
 from tqdm import tqdm
 
