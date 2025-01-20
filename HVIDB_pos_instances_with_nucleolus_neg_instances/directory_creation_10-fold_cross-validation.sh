@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # The purpose of this BASH script is to automate the creation of
 # directories to run k-fold cross-validation in
 # This directory creation is accomplished for two of the three
