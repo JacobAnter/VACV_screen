@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# The purpose of this BASH script is do automate the transfer of the
+# The purpose of this BASH script is to automate the transfer of the
 # data set files to the SENSE-PPI directory on Hemera
 
 # Usage of sshpass obviates the necessity to repeatedly enter the
