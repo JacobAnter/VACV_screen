@@ -12,7 +12,8 @@ do
     # The xCAPT5 source code has been tweaked such that one output file
     # is generated
     # Thus, for each test set, only one file has to be transferred
-    sshpass -p "${password}" scp anter87@hemera5:~/PPI_prediction/xCAPT5/10-fold_cross-validation/without_training/xCAPT5_interaction_probs_VACV_WR_10-fold_cross-val_test_set_${i}_without_XGBoost.tsv .
+    sshpass -p "${password}" scp anter87@hemera5:~/PPI_prediction/xCAPT5/10-fold_cross-validation/without_training/without_XGBoost/xCAPT5_interaction_probs_VACV_WR_10-fold_cross-val_test_set_${i}_without_XGBoost.tsv \
+    Results_without_XGBoost
 done
 
 echo "Data transfer accomplished."
