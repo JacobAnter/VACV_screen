@@ -11,8 +11,7 @@ the context of cross-species PPIs.
 
 import sys
 
-path_to_MaTPIP = "/home/anter87/PPI_prediction/MaTPIP/"\
-    "mat_p2ip_prj/codebase"
+path_to_MaTPIP = "/bigdata/casus/MLID/Jacob/MaTPIP/mat_p2ip_prj/codebase"
 sys.path.insert(0, path_to_MaTPIP)
 
 import numpy as np
