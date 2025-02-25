@@ -30,7 +30,6 @@ path_to_human_PPI_data_set_tsv = (
 # one-dimensional pre-trained PLM-based features
 # Therefore, its path is not explicitly specified
 
-# Perform feature extraction
 # Mind the trailing slash in the path definition below, it must be
 # present!
 path_to_data_set = "/bigdata/casus/MLID/Jacob/MaTPIP/mat_p2ip_prj/"\
