@@ -15,8 +15,6 @@ path_to_MaTPIP = "/bigdata/casus/MLID/Jacob/MaTPIP/mat_p2ip_prj/codebase"
 sys.path.insert(0, path_to_MaTPIP)
 
 import numpy as np
-
-from utils.feat_engg_manual_main import extract_prot_seq_2D_manual_feat
 from utils.PPIPUtils import parseTSV
 from proc.mat_p2ip.mat_p2ip_origMan_auxTlOtherMan.mat_MatP2ipNetwork_origMan_auxTlOtherMan_held20 import MatP2ipNetworkModule
 
@@ -39,12 +37,6 @@ path_to_data_set = "/bigdata/casus/MLID/Jacob/MaTPIP/mat_p2ip_prj/"\
     "dataset/human_PPI_data_set_D-SCRIPT/"
 feature_path = "/bigdata/casus/MLID/Jacob/MaTPIP/mat_p2ip_prj/"\
     "dataset/preproc_data/derived_feat/PPI_Datasets/Human2021/"
-
-extract_prot_seq_2D_manual_feat(
-    feature_path,
-    set(['PSSM', 'LabelEncoding', 'Blosum62', 'SkipGramAA7']),
-    spec_type="human"
-)
 
 # Now load the TSV file harbouring the PPI pairs to train the model on
 training_set = np.asarray(parseTSV(path_to_human_PPI_data_set_tsv))
