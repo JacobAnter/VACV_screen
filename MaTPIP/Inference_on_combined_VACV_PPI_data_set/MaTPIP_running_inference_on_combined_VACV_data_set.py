@@ -44,11 +44,11 @@ path_to_test_set = (
     "instances_without_header.tsv"
 )
 
-extract_prot_seq_2D_manual_feat(
-    feature_path,
-    set(['PSSM', 'LabelEncoding', 'Blosum62', 'SkipGramAA7']),
-    spec_type="human_nucleolus_and_VACV_WR_prot_seqs"
-)
+# extract_prot_seq_2D_manual_feat(
+#     feature_path,
+#     set(['PSSM', 'LabelEncoding', 'Blosum62', 'SkipGramAA7']),
+#     spec_type="human_nucleolus_and_VACV_WR_prot_seqs"
+# )
 
 # Load the test set
 test_set = np.asarray(parseTSV(path_to_test_set))
