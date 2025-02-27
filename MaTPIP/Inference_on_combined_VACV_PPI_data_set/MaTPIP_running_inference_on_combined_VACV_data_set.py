@@ -40,7 +40,7 @@ feature_path = (
 
 path_to_test_set = (
     "/bigdata/casus/MLID/Jacob/MaTPIP/mat_p2ip_prj/dataset/human_"
-    "PPI_data_set_D-SCRIP/VACV_WR_pos_and_nucleolus_prots_neg_PPI_"
+    "PPI_data_set_D-SCRIPT/VACV_WR_pos_and_nucleolus_prots_neg_PPI_"
     "instances_without_header.tsv"
 )
 
