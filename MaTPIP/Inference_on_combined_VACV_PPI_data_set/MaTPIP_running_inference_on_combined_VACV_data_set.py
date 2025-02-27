@@ -10,8 +10,7 @@ import sys
 import pandas as pd
 import numpy as np
 
-path_to_MaTPIP = "anter87@hemera5:/bigdata/casus/MLID/Jacob/MaTPIP/"\
-    "mat_p2ip_prj/codebase"
+path_to_MaTPIP = "/bigdata/casus/MLID/Jacob/MaTPIP/mat_p2ip_prj/codebase"
 sys.path.insert(0, path_to_MaTPIP)
 
 from utils.feat_engg_manual_main import extract_prot_seq_2D_manual_feat
