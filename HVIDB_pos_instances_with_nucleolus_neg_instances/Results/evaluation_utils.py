@@ -7,7 +7,7 @@ import math
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, roc_auc_score
 
 def _round_half_up(number):
     """
@@ -117,18 +117,19 @@ def add_labels_based_on_probs(path_tsv_files, pred_col_name, n_fold):
 
 
 def evaluation_k_fold_cross_val(
-        ground_truth_path, splits_path, n_fold, model_name, output_path
+        ground_truth_path, splits_path, n_fold, probability_key,
+        model_name, output_path
 ):
     """
     Evaluates a PPI prediction model's performance in the context of
-    k-fold cross-validation by computing five different metrics, which
-    are accuracy, precision, recall, F1-score and specificity. A
-    prerequisite for employing this function is that the predicted
-    labels of each test set are stored in separate files named in a
-    systematic manner. See the elaborations on the `splits_path`
+    k-fold cross-validation by computing six different metrics, which
+    are accuracy, precision, recall, F1-score, specificity and ROC AUC
+    score. A prerequisite for employing this function is that the
+    predicted labels of each test set are stored in separate files named
+    in a systematic manner. See the elaborations on the `splits_path`
     parameter for more detailed information.
 
-    To be more precise, each of the five metrics is given as mean value
+    To be more precise, each of the six metrics is given as mean value
     across all k test sets along with the corresponding standard
     deviation.
 
@@ -140,9 +141,9 @@ def evaluation_k_fold_cross_val(
         ground truth labels must bear the name `label`.
     splits_path: str
         A string denoting the path to the test set TSV files containing
-        the labels in a general manner. To be more precise, it is
-        assumed that the names of the files in question only differ in
-        one position carrying an integer. Thus, the path has to be
+        the predicted labels in a general manner. To be more precise, it
+        is assumed that the names of the files in question only differ
+        in one position carrying an integer. Thus, the path has to be
         provided in the following format:
         /dir_1/dir_2/interaction_probs_test_set_{i}.tsv
         As with the ground truth TSV file denoted by
@@ -160,6 +161,9 @@ def evaluation_k_fold_cross_val(
         An integer corresponding to the k in k-fold cross-validation,
         i.e. it denotes the number of chunks the original data set has
         been split into and thus the number of test sets to process.
+    probability_key: str
+        A string denoting the name of the column in the results TSV
+        files harbouring the predicted probabilities.
     model_name: str
         A string denoting the model to evaluate via k-fold
         cross-validation.
@@ -188,6 +192,10 @@ def evaluation_k_fold_cross_val(
     specificity_tuple: tuple, dtype=float
         A tuple the first element of which is the mean specificity
         across the k test sets and the second element of which is the
+        corresponding standard deviation.
+    roc_auc_score_tuple: tuple, dtype=float
+        A tuple the first element of which is the mean ROC AUC score
+        across the k test sets and he second element of which is the
         corresponding standard deviation.
     """
 
@@ -233,9 +241,9 @@ def evaluation_k_fold_cross_val(
             current_test_set_ground_truth_labels
         )
     
-    # Now, compute the five metrics mentioned in the docstring for each
-    # and every test set (accuracy, precision, recall, F1-score and
-    # specificity)
+    # Now, compute the six metrics mentioned in the docstring for each
+    # and every test set (accuracy, precision, recall, F1-score,
+    # specificity and ROC AUC score)
     # To this end, scikit-learn's `confusion_matrix` class is utilised
 
     # Store the metric values for each test set in corresponding lists
@@ -244,18 +252,23 @@ def evaluation_k_fold_cross_val(
     recall_list = []
     f1_score_list = []
     specificity_list = []
+    roc_auc_score_list = []
 
     # Iterate over the k test sets
     for i, current_ground_truths in enumerate(
         ground_truth_labels_per_test_set
     ):
-        # Extract the predicted labels of the test set at hand
+        # Extract the predicted labels as well as the predicted
+        # probabilities of the test set at hand
         current_test_set_pred_df = pd.read_csv(
             splits_path.format(i=i),
             sep="\t"
         )
         current_predicted_labels = current_test_set_pred_df[
             "label"
+        ].to_list()
+        current_predicted_probs = current_test_set_pred_df[
+            probability_key
         ].to_list()
 
         # The predicted labels along with the ground truth labels are
@@ -298,14 +311,19 @@ def evaluation_k_fold_cross_val(
         # = TN / (TN + FP)
         specificity = cm[0,0] / (cm[0,0] + cm[0,1])
 
+        auc_score = roc_auc_score(
+            current_ground_truths, current_predicted_probs
+        )
+
         accuracy_list.append(accuracy)
         precision_list.append(precision)
         recall_list.append(recall)
         f1_score_list.append(f1_score)
         specificity_list.append(specificity)
+        roc_auc_score_list.append(auc_score)
     
     # Now, compute the mean as well as the standard deviation for all
-    # five metrics
+    # six metrics
     accuracy_mean = np.mean(accuracy_list)
     accuracy_std = np.std(accuracy_list)
     accuracy_tuple = (accuracy_mean, accuracy_std)
@@ -326,6 +344,10 @@ def evaluation_k_fold_cross_val(
     specificity_std = np.std(specificity_list)
     specificity_tuple = (specificity_mean, specificity_std)
 
+    roc_auc_score_mean = np.mean(roc_auc_score_list)
+    roc_auc_score_std = np.std(roc_auc_score_list)
+    roc_auc_tuple = (roc_auc_score_mean, roc_auc_score_std)
+
     # Regarding string padding by means of string methods such as
     # `.ljust()`, it must be noted that if string continuation by e.g.
     # parantheses is used, the entire text preceding a certain point
@@ -336,11 +358,12 @@ def evaluation_k_fold_cross_val(
     metrics_result_test = (
         f"Using {n_fold}-fold cross-validation, the metrics for "
         f"{model_name} are as follows:\n" +
-        "Accuracy".ljust(13) + f"{accuracy_mean} \xB1 {accuracy_std}\n" +
-        "Precision".ljust(13) + f"{precision_mean} \xB1 {precision_std}\n" +
-        "Recall".ljust(13) + f"{recall_mean} \xB1 {recall_std}\n" +
-        "F1-score".ljust(13) + f"{f1_score_mean} \xB1 {f1_score_std}\n" +
-        "Specificity".ljust(13) + f"{specificity_mean} \xB1 {specificity_std}"
+        "Accuracy:".ljust(15) + f"{accuracy_mean} \xB1 {accuracy_std}\n" +
+        "Precision:".ljust(15) + f"{precision_mean} \xB1 {precision_std}\n" +
+        "Recall:".ljust(15) + f"{recall_mean} \xB1 {recall_std}\n" +
+        "F1-score:".ljust(15) + f"{f1_score_mean} \xB1 {f1_score_std}\n" +
+        "Specificity:".ljust(15) + f"{specificity_mean} \xB1 {specificity_std}\n" +
+        "ROC AUC score:".ljust(15) + f"{roc_auc_score_mean} \xB1 {roc_auc_score_std}"
     )
 
     print(metrics_result_test)
@@ -352,4 +375,4 @@ def evaluation_k_fold_cross_val(
         f.write(metrics_result_test)
 
     return accuracy_tuple, precision_tuple, recall_tuple,\
-        f1_score_tuple, specificity_tuple
+        f1_score_tuple, specificity_tuple, roc_auc_tuple
