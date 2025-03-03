@@ -7,7 +7,9 @@ import math
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import confusion_matrix, roc_auc_score
+from sklearn.metrics import confusion_matrix, roc_auc_score, roc_curve,\
+    auc
+from matplotlib import pyplot as plt
 
 def _round_half_up(number):
     """
@@ -376,3 +378,165 @@ def evaluation_k_fold_cross_val(
 
     return accuracy_tuple, precision_tuple, recall_tuple,\
         f1_score_tuple, specificity_tuple, roc_auc_tuple
+
+
+def generate_ROC_curves(
+        ground_truth_path, model_names, results_files_path_list, n_fold,
+        probability_key_list, output_path
+):
+    """
+    Genrates a plot of one or multiple ROC curves in one figure.
+
+    Parameters
+    ----------
+    ground_truth_path: str
+        A string denoting the path to the TSV file harbouring the ground
+        truth labels. In the TSV file, the column containing the ground
+        truth labels must bear the name `label`.
+    model_names: list, dtype=str, shape=(n,)
+        A list comprising the names of the models to compare.
+    results_files_path_list: list, dtype=str, shape=(n,)
+        A list containing for each model the path to the respective
+        results TSV files in a general manner. To be more precise, it is
+        assumed that the names of the files in question only differ in
+        one position carrying an integer. Thus, the path has to be
+        provided in the following format:
+        /dir_1/dir_2/results_model_x_test_set_{i}.tsv
+        As with the ground truth TSV file denoted by
+        `ground_truth_path`, the column harbouring the predicted labels
+        must bear the name `label`. Apart from that, it is assumed that
+        the first two columns harbour the UniProt IDs of the PPI pairs,
+        and also that the PPI pairs have the same ordering as in the
+        ground truth file. What is meant by that is that if a UniProt ID
+        of a PPI occurs in the first column of the results TSV file, it
+        also has to occur in the first column of the ground truth TSV
+        file. Conversely, a UniProt ID of a certain PPI occurring in the
+        second column of the results TSV file also has to occur in the
+        second column of the ground truth TSV file.
+        Note that the order of the paths should be consistent with the
+        order of the models in other inputs.
+    n_fold: int
+        An integer corresponding to the k in k-fold cross-validation,
+        i.e. it denotes the number of chunks the original data set has
+        been split into and thus the number of test sets to process.
+    probability_key_list: list, dtype=str, shape=(n,)
+        A list specifying for each model the name of the column in the
+        respective resuts TSV files harbouring the predicted
+        probabilities.
+        Note that the order of the column names should be consisten
+        with the order of the models in other inputs.
+    output_path: str
+        A string denoting the path to the output file to store the
+        ROC curve plot in.
+
+    Returns
+    -------
+    roc_auc_scores: list, dtype=float, shape=(n,)
+        A list comprising the ROC AUC scores for the models in the order
+        in which they have been provided as input.
+    """
+
+    roc_auc_score_list = []
+    fpr_tpr_list = []
+
+    # Load the file harbouring the ground truth labels
+    ground_truth_df = pd.read_csv(ground_truth_path, sep="\t")
+
+    # Iterate over the individual models
+    for i in range(len(model_names)):
+        results_files_path = results_files_path_list[i]
+        probability_key = probability_key_list[i]
+
+        # Iterate over the k test sets in order to stitch them together
+        # by means of `pandas.concat()`
+        dfs_to_concat = []
+
+        for j in range(n_fold):
+            current_test_set_df = pd.read_csv(
+                results_files_path.format(i=i),
+                sep="\t"
+            )
+            dfs_to_concat.append(current_test_set_df)
+        
+        entire_test_set_preds_df = pd.concat(dfs_to_concat)
+
+        # Plotting the ROC curve as well as computing the ROC AUC score
+        # requires the ground truth labels as well as the predicted
+        # probabilities in the same order
+        predicted_probs = entire_test_set_preds_df[
+            probability_key
+        ].to_list()
+
+        # As the data set has been shuffled prior to splitting it into
+        # ten chunks, the ground truth labels have to be extracted in a
+        # piecewise fashion
+        # To be more precise, it is iterated over the PPI pairs of the
+        # entire test set DataFrame in order to retrieve the
+        # corresponding ground truth label from the file harbouring the
+        # ground truth labels
+        ground_truth_labels = []
+
+        for _, row in entire_test_set_preds_df.iterrows():
+            first_uniprot_acc = row.iloc[0]
+            second_uniprot_acc = row.iloc[1]
+
+            # Extracting a single column yields a Pandas Series
+            # In order to obtain the actual value stored in the Series,
+            # it has to be explicitly accessed, for instance by integer-
+            # based indexing (`.iloc`)
+            current_ground_truth_label = ground_truth_df.loc[
+                (ground_truth_df.iloc[:, 0] == first_uniprot_acc)
+                &
+                (ground_truth_df.iloc[:, 1] == second_uniprot_acc),
+                "label"
+            ].iloc[0]
+            
+            ground_truth_labels.append(current_ground_truth_label)
+        
+        # Finally, use the ground truth labels in conjunction with the
+        # predicted probabilities so as to compute the ROC AUC score as
+        # well as FPR/TPR values
+        fpr, tpr, _ = roc_curve(ground_truth_labels, predicted_probs)
+        fpr_tpr_list.append([fpr, tpr])
+
+        roc_auc_score = auc(fpr, tpr)
+        roc_auc_score_list.append(roc_auc_score)
+
+    # Now, turn to the generation of the ROC curves
+    fig = plt.figure()
+    sub_1 = fig.add_subplot(1, 1, 1)
+
+    sub_1.set_xlabel("False Positive Rate")
+    sub_1.set_ylabel("True Positive Rate")
+    sub_1.set_title("ROC curves for different PPI prediction models")
+
+    sub_1.set_xlim(0, 1)
+    sub_1.set_ylim(0, 1.05)
+
+    # Plot the dashed diagonal line representing a random chance model
+    sub_1.plot([0, 1], [0, 1], lw=2, linestyle="--")
+
+    # Plot the ROC curves
+    for fpr_tpr_pair, model_name, roc_auc_score in zip(
+        fpr_tpr_list, model_names, roc_auc_score_list
+    ):
+        sub_1.plot(
+            fpr_tpr_pair[0], fpr_tpr_pair[1], lw=2,
+            label=f"{model_name} (area = {roc_auc_score:.2f})"
+        )
+
+    sub_1.legend(loc="lower right")
+
+    plt.show()
+
+    # Calling functions via `pyplot` is known as implicit API;
+    # Matplotlib internally keeps track of "current" axes, figures, etc.
+    # Thus, pyploy.savefig() is equivalent to pyplot.gcf.savefig()
+    # However, after calling `show`, the list of "current" figures and
+    # axes is empty
+    # Hence, it is advisable to explicitly access the figures, axes,
+    # etc. to operate on rather than to rely on the implicit API
+    # For more details, refer to https://stackoverflow.com/questions/21875356/saving-a-figure-after-invoking-pyplot-show-results-in-an-empty-file
+    fig.savefig(output_path, format="svg")
+
+    return roc_auc_score_list
