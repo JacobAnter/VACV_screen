@@ -24,6 +24,14 @@ from tqdm import tqdm
 from xCAPT5_utils import (get_T5_model, read_fasta, get_embeddings,
     save_embeddings, pad, leaky_relu, multi_cnn)
 
+try:
+   os.mkdir("protT5")
+   os.mkdir("protT5/protT5_checkpoint")
+   os.mkdir("protT5/sec_struct_checkpoint")
+   os.mkdir("protT5/output")
+except FileExistsError:
+   print("\nDirectories have already been created.\n")
+
 # For some strange reason, Tensorflow is looking the wrong directories
 # for the CuDNN library (i.e. the libcudnn.so.8 file)
 # Therefore, in order to enable GPU usage, the CuDNN library has to be
