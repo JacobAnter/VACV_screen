@@ -37,8 +37,8 @@ FASTA_file_path_1 = (
 )
 FASTA_file_path_2 = (
     "/bigdata/casus/MLID/Jacob/MaTPIP/mat_p2ip_prj/dataset/preproc_"
-    "data/derived_feat/PPI_Datasets/Human2021/human_proteins_in_HVIDB_"
-    "and_VACV_WR_proteome.fasta"
+    "data/derived_feat/PPI_Datasets/Human2021/human_proteins_in_"
+    "combined_data_set_and_VACV_WR_proteome.fasta"
 )
 
 FASTA_file_paths = [FASTA_file_path_1, FASTA_file_path_2]
@@ -61,8 +61,8 @@ feature_path = (
 
 path_to_test_set = (
     "/bigdata/casus/MLID/Jacob/MaTPIP/mat_p2ip_prj/dataset/human_"
-    "PPI_data_set_D-SCRIPT/PPI_pairs_between_human_prots_from_HVIDB_"
-    "and_VACV_WR_proteome.tsv"
+    "PPI_data_set_D-SCRIPT/PPI_pairs_between_human_prots_in_combined_"
+    "data_set_and_VACV_WR_proteome.tsv"
 )
 
 extract_prot_seq_2D_manual_feat(
