@@ -17,6 +17,8 @@ from utils.feat_engg_manual_main import extract_prot_seq_2D_manual_feat
 from utils.PPIPUtils import parseTSV
 from proc.mat_p2ip.mat_p2ip_origMan_auxTlOtherMan.mat_MatP2ipNetwork_origMan_auxTlOtherMan_held20 import MatP2ipNetworkModule
 
+from FASTA_file_utils import flatten_seqs_in_fasta
+
 # Define model hyperparameters
 hyp = {'fullGPU':True,'deviceType':'cuda'} 
 
@@ -24,6 +26,25 @@ hyp['hiddenSize'] = 70
 hyp['numLayers'] = 4
 hyp['n_heads'] = 1
 hyp['layer_1_size'] = 1024
+
+# MaTPIP does not allow the sequences in FASTA files to span multiple
+# lines
+# Therefore, the sequences have to be "flattened", i.e. altered such
+# that they occupy only one line
+FASTA_file_path_1 = (
+    "/bigdata/casus/MLID/Jacob/MaTPIP/mat_p2ip_prj/dataset/orig_"
+    "data/Human2021/allSeqs.fasta"
+)
+FASTA_file_path_2 = (
+    "/bigdata/casus/MLID/Jacob/MaTPIP/mat_p2ip_prj/dataset/preproc_"
+    "data/derived_feat/PPI_Datasets/Human2021/human_proteins_in_HVIDB_"
+    "and_VACV_WR_proteome.fasta"
+)
+
+FASTA_file_paths = [FASTA_file_path_1, FASTA_file_path_2]
+
+for FASTA_file_path in FASTA_file_paths:
+    flatten_seqs_in_fasta(FASTA_file_path)
 
 path_to_trained_model = (
     "/bigdata/casus/MLID/Jacob/MaTPIP/mat_p2ip_prj/dataset/"
