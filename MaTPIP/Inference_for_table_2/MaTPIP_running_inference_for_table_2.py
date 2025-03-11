@@ -65,10 +65,20 @@ path_to_test_set = (
     "data_set_and_VACV_WR_proteome.tsv"
 )
 
+# The implementation provided by the authors expects the TSV file to
+# have a third column harbouring interaction labels (i.e. 1 for True and
+# 0 for False), irrespective of whether they are known or not
+# Therefore, in case the TSV used does not already possess a third
+# column, one is introduced having zero as its values
+pair_df = pd.read_csv(path_to_test_set, sep="\t", header=None)
+if pair_df.shape[1] < 3:
+    pair_df["Label"] = 0
+    pair_df.to_csv(path_to_test_set, sep="\t", header=False, index=False)
+
 extract_prot_seq_2D_manual_feat(
     feature_path,
     set(['PSSM', 'LabelEncoding', 'Blosum62', 'SkipGramAA7']),
-    spec_type="human_proteins_in_HVIDB_and_VACV_WR_proteome"
+    spec_type="human_proteins_in_combined_data_set_and_VACV_WR_proteome"
 )
 
 # Load the test set
