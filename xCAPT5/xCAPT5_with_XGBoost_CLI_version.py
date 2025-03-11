@@ -294,6 +294,9 @@ y = y.reshape(-1, )
 model_= XGBClassifier(booster='gbtree', reg_lambda=1, alpha=1e-7, subsample=0.8, colsample_bytree=0.2, n_estimators=100, max_depth=5, min_child_weight=2, gamma=1e-7, eta=1e-6)
 model_.fit(X, y, verbose=False)
 
+# Don't forget to save the fitted model!
+model_.save_model(f"{args.output}.model")
+
 
 # Evaluate on the test data set with MCAPST5-X
 y_pred = model_.predict_proba(X)
