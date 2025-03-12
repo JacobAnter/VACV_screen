@@ -254,8 +254,20 @@ model.summary()
 tf.keras.utils.plot_model(model, show_shapes=True)
 
 # Load checkpoint
+# Prior to that, it is verified whether the checkpoint files exist in
+# the current directory
+# If not, they are downloaded
 checkpoint_mcapst5 = "mcapst5_pan_epoch_20.hdf5"
 checkpoint_xgboost = "xgboost_pan_epoch_20.bin"
+
+if not os.path.isfile(checkpoint_mcapst5):
+   os.system(
+      'wget https://github.com/anhvt00/MCAPS/raw/master/checkpoint/Pan/mcapst5_pan_epoch_20.hdf5'
+   )
+if not os.path.isfile(checkpoint_xgboost):
+   os.system(
+      'wget https://github.com/anhvt00/MCAPS/raw/master/checkpoint/Pan/xgboost_pan_epoch_20.bin'
+   )
 
 model = tf.keras.models.load_model(checkpoint_mcapst5)
 model_ = XGBClassifier()
