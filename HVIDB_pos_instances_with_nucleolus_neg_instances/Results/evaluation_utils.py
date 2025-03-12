@@ -397,11 +397,14 @@ def generate_ROC_curves(
         A list comprising the names of the models to compare.
     results_files_path_list: list, dtype=str, shape=(n,)
         A list containing for each model the path to the respective
-        results TSV files in a general manner. To be more precise, it is
-        assumed that the names of the files in question only differ in
-        one position carrying an integer. Thus, the path has to be
+        results TSV file(s) in a general manner. To be more precise, it
+        is assumed that the names of the files in question only differ
+        in one position carrying an integer. Thus, the path has to be
         provided in the following format:
         /dir_1/dir_2/results_model_x_test_set_{i}.tsv
+        Alternatively, the path to a file encompassing all predictions
+        may be provided. In that case, the file name must not contain
+        curly braces ("{" and "}").
         As with the ground truth TSV file denoted by
         `ground_truth_path`, the column harbouring the predicted labels
         must bear the name `label`. Apart from that, it is assumed that
@@ -447,18 +450,25 @@ def generate_ROC_curves(
         results_files_path = results_files_path_list[i]
         probability_key = probability_key_list[i]
 
-        # Iterate over the k test sets in order to stitch them together
-        # by means of `pandas.concat()`
-        dfs_to_concat = []
+        if ("{" in results_files_path) and ("}" in results_files_path):
+            # Iterate over the k test sets in order to stitch them
+            # together by means of `pandas.concat()`
+            dfs_to_concat = []
 
-        for j in range(n_fold):
-            current_test_set_df = pd.read_csv(
-                results_files_path.format(i=i),
+            for j in range(n_fold):
+                current_test_set_df = pd.read_csv(
+                    results_files_path.format(i=i),
+                    sep="\t"
+                )
+                dfs_to_concat.append(current_test_set_df)
+        
+            entire_test_set_preds_df = pd.concat(dfs_to_concat)
+        else:
+            entire_test_set_preds_df = pd.read_csv(
+                results_files_path,
                 sep="\t"
             )
-            dfs_to_concat.append(current_test_set_df)
         
-        entire_test_set_preds_df = pd.concat(dfs_to_concat)
 
         # Plotting the ROC curve as well as computing the ROC AUC score
         # requires the ground truth labels as well as the predicted
