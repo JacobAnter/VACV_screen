@@ -36,6 +36,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--pairs_file")
 parser.add_argument("--fasta_file")
 parser.add_argument("--output")
+parser.add_argument("--XGBoost_checkpoint")
 
 args = parser.parse_args()
 
@@ -261,13 +262,20 @@ tf.keras.utils.plot_model(model, show_shapes=True)
 # the current directory
 # If not, they are downloaded
 checkpoint_mcapst5 = "mcapst5_pan_epoch_20.hdf5"
-checkpoint_xgboost = "xgboost_pan_epoch_20.bin"
+if args.XGBoost_checkpoint == None:
+    checkpoint_xgboost = "xgboost_pan_epoch_20.bin"
+else:
+   checkpoint_xgboost = args.XGBoost_checkpoint
 
 if not os.path.isfile(checkpoint_mcapst5):
    os.system(
       'wget https://github.com/anhvt00/MCAPS/raw/master/checkpoint/Pan/mcapst5_pan_epoch_20.hdf5'
    )
-if not os.path.isfile(checkpoint_xgboost):
+if (
+   (checkpoint_xgboost == "xgboost_pan_epoch_20.bin")
+   and
+   (not os.path.isfile(checkpoint_xgboost))
+):
    os.system(
       'wget https://github.com/anhvt00/MCAPS/raw/master/checkpoint/Pan/xgboost_pan_epoch_20.bin'
    )
