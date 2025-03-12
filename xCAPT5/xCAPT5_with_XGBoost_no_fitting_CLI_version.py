@@ -317,7 +317,7 @@ results_df = pd.DataFrame(
 )
 
 results_df.to_csv(
-   f"xCAPT5_interaction_probs_{args.output}_with_XGBoost.tsv",
+   f"xCAPT5_interaction_probs_{args.output}_with_XGBoost_no_fitting.tsv",
    sep="\t",
    index=False
 )
