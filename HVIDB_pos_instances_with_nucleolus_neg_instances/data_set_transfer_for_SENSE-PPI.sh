@@ -11,12 +11,12 @@ echo "Password successfully entered."
 
 # As k-fold cross-validation with k being equal to 10 is supposed to be
 # performed, there are 10 different splits in total
-# Additionally, there are three chunks for each split (in the case of
-# the test sets)
+# Additionally, there are four chunks for each split (in the case of the
+# test sets)
 # Iterate over the 10 splits
 for i in $(seq 0 9)
 do
-    # Iterate over the three different chunks each test set has been
+    # Iterate over the four different chunks each test set has been
     # subdivided into
     for j in $(seq 0 3)
     do
