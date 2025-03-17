@@ -307,7 +307,7 @@ model_= XGBClassifier(booster='gbtree', reg_lambda=1, alpha=1e-7, subsample=0.8,
 model_.fit(X, y, verbose=False)
 
 # Don't forget to save the fitted model!
-model_.save_model(f"{args.output}.model")
+model_.save_model(f"XGBoost_{args.output}.model")
 
 
 # Evaluate on the test data set with MCAPST5-X
