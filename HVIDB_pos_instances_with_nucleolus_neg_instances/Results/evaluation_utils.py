@@ -457,7 +457,7 @@ def generate_ROC_curves(
 
             for j in range(n_fold):
                 current_test_set_df = pd.read_csv(
-                    results_files_path.format(i=i),
+                    results_files_path.format(i=j),
                     sep="\t"
                 )
                 dfs_to_concat.append(current_test_set_df)
