@@ -328,3 +328,9 @@ if not os.path.exists("ckpts"):
    os.makedirs("ckpts")
 
 
+model.fit(
+   train_dataset,
+   epochs=args.n_epochs,
+   callbacks=callbacks,
+   validation_data=val_dataset
+)
