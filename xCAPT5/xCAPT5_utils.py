@@ -141,7 +141,7 @@ def leaky_relu(x, alpha = .2):
    return tf.keras.backend.maximum(alpha*x, x)
 
 
-def multi_cnn(seq_size=1200, dim=1024):
+def multi_cnn(seq_size=1200, dim=1024, learning_rate=1e-3):
     DEPTH = 5
     WIDTH = 3
     POOLING_SIZE = 4
@@ -273,6 +273,6 @@ def multi_cnn(seq_size=1200, dim=1024):
     adabelief = tfa.optimizers.AdaBelief(
     rectify=False,
     epsilon=1e-8)
-    adam = Adam(learning_rate=1e-3, amsgrad=True, epsilon=1e-6)
+    adam = Adam(learning_rate=learning_rate, amsgrad=True, epsilon=1e-6)
     model.compile(optimizer=adam, loss='binary_crossentropy', metrics=['accuracy'])
     return model
