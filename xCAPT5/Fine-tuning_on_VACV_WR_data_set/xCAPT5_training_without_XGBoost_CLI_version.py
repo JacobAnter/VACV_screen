@@ -46,7 +46,7 @@ parser.add_argument(
    default="xCAPT5_training_without_XGBoost"
 )
 parser.add_argument("--MCAPST5_ckpt", type=str, default=None)
-parser.add_argument("--learning_rate", default=1e-3)
+parser.add_argument("--learning_rate", type=float, default=1e-3)
 
 args = parser.parse_args()
 
