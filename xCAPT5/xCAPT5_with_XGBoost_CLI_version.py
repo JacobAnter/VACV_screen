@@ -32,9 +32,11 @@ except FileExistsError:
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--pairs_file")
-parser.add_argument("--fasta_file")
-parser.add_argument("--output")
+parser.add_argument("pairs_file", type=str)
+parser.add_argument("fasta_file", type=str)
+parser.add_argument("MCAPST5_ckpt", type=str)
+parser.add_argument("XGBoost_ckpt", type=str)
+parser.add_argument("output")
 
 args = parser.parse_args()
 
@@ -254,20 +256,8 @@ model.summary()
 tf.keras.utils.plot_model(model, show_shapes=True)
 
 # Load checkpoint
-# Prior to that, it is verified whether the checkpoint files exist in
-# the current directory
-# If not, they are downloaded
-checkpoint_mcapst5 = "mcapst5_pan_epoch_20.hdf5"
-checkpoint_xgboost = "xgboost_pan_epoch_20.bin"
-
-if not os.path.isfile(checkpoint_mcapst5):
-   os.system(
-      'wget https://github.com/anhvt00/MCAPS/raw/master/checkpoint/Pan/mcapst5_pan_epoch_20.hdf5'
-   )
-if not os.path.isfile(checkpoint_xgboost):
-   os.system(
-      'wget https://github.com/anhvt00/MCAPS/raw/master/checkpoint/Pan/xgboost_pan_epoch_20.bin'
-   )
+checkpoint_mcapst5 = args.MCAPST5_ckpt
+checkpoint_xgboost = args.XGBoost_ckpt
 
 model = tf.keras.models.load_model(checkpoint_mcapst5)
 model_ = XGBClassifier()
