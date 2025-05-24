@@ -151,7 +151,7 @@ def eval_performance(ground_truth_path, prediction_path, output_path):
             f"Accuracy: {acc}\n"
             f"Precision: {prec}\n"
             f"Recall: {rec}\n"
-            f"Specificity; {spec}\n"
+            f"Specificity: {spec}\n"
             f"F1-score: {f1}\n"
             f"MCC: {mcc}\n"
             f"AUROC: nan\n"
