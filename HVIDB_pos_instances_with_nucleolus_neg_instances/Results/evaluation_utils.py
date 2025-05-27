@@ -8,7 +8,7 @@ import math
 import numpy as np
 import pandas as pd
 from sklearn.metrics import confusion_matrix, roc_auc_score, roc_curve,\
-    auc
+    auc, matthews_corrcoef, average_precision_score
 from matplotlib import pyplot as plt
 
 def _round_half_up(number):
@@ -124,14 +124,15 @@ def evaluation_k_fold_cross_val(
 ):
     """
     Evaluates a PPI prediction model's performance in the context of
-    k-fold cross-validation by computing six different metrics, which
-    are accuracy, precision, recall, F1-score, specificity and ROC AUC
-    score. A prerequisite for employing this function is that the
-    predicted labels of each test set are stored in separate files named
-    in a systematic manner. See the elaborations on the `splits_path`
-    parameter for more detailed information.
+    k-fold cross-validation by computing eight different metrics, which
+    are accuracy, precision, recall, F1-score, specificity, Matthews
+    correlation coefficient, ROC AUC score and AUPRC. A prerequisite for
+    employing this function is that the predicted labels of each test
+    set are stored in separate files named in a systematic manner. See
+    the elaborations on the `splits_path` parameter for more detailed
+    information.
 
-    To be more precise, each of the six metrics is given as mean value
+    To be more precise, each of the eight metrics is given as mean value
     across all k test sets along with the corresponding standard
     deviation.
 
@@ -243,9 +244,10 @@ def evaluation_k_fold_cross_val(
             current_test_set_ground_truth_labels
         )
     
-    # Now, compute the six metrics mentioned in the docstring for each
+    # Now, compute the eight metrics mentioned in the docstring for each
     # and every test set (accuracy, precision, recall, F1-score,
-    # specificity and ROC AUC score)
+    # specificity, Matthews correlation coefficient, ROC AUC score and
+    # AUPRC)
     # To this end, scikit-learn's `confusion_matrix` class is utilised
 
     # Store the metric values for each test set in corresponding lists
@@ -254,7 +256,9 @@ def evaluation_k_fold_cross_val(
     recall_list = []
     f1_score_list = []
     specificity_list = []
+    mcc_list = []
     roc_auc_score_list = []
+    auprc_list = []
 
     # Iterate over the k test sets
     for i, current_ground_truths in enumerate(
@@ -313,7 +317,15 @@ def evaluation_k_fold_cross_val(
         # = TN / (TN + FP)
         specificity = cm[0,0] / (cm[0,0] + cm[0,1])
 
+        mcc = matthews_corrcoef(
+            current_ground_truths, current_predicted_labels
+        )
+
         auc_score = roc_auc_score(
+            current_ground_truths, current_predicted_probs
+        )
+
+        auprc_score = average_precision_score(
             current_ground_truths, current_predicted_probs
         )
 
@@ -322,10 +334,12 @@ def evaluation_k_fold_cross_val(
         recall_list.append(recall)
         f1_score_list.append(f1_score)
         specificity_list.append(specificity)
+        mcc_list.append(mcc)
         roc_auc_score_list.append(auc_score)
+        auprc_list.append(auprc_score)
     
     # Now, compute the mean as well as the standard deviation for all
-    # six metrics
+    # eight metrics
     accuracy_mean = np.mean(accuracy_list)
     accuracy_std = np.std(accuracy_list)
     accuracy_tuple = (accuracy_mean, accuracy_std)
@@ -346,9 +360,17 @@ def evaluation_k_fold_cross_val(
     specificity_std = np.std(specificity_list)
     specificity_tuple = (specificity_mean, specificity_std)
 
+    mcc_mean = np.mean(mcc_list)
+    mcc_std = np.std(mcc_list)
+    mcc_tuple = (mcc_mean, mcc_std)
+
     roc_auc_score_mean = np.mean(roc_auc_score_list)
     roc_auc_score_std = np.std(roc_auc_score_list)
     roc_auc_tuple = (roc_auc_score_mean, roc_auc_score_std)
+
+    auprc_mean = np.mean(auprc_list)
+    auprc_std = np.std(auprc_list)
+    auprc_tuple = (auprc_mean, auprc_std)
 
     # Regarding string padding by means of string methods such as
     # `.ljust()`, it must be noted that if string continuation by e.g.
@@ -357,7 +379,7 @@ def evaluation_k_fold_cross_val(
     # Thus, in order to apply string padding to a limited string, it is
     # advisable to separate that string from the surrounding ones by
     # e.g. commas or the plus operator
-    metrics_result_test = (
+    metrics_result_text = (
         f"Using {n_fold}-fold cross-validation, the metrics for "
         f"{model_name} are as follows:\n" +
         "Accuracy:".ljust(15) + f"{accuracy_mean} \xB1 {accuracy_std}\n" +
@@ -365,19 +387,22 @@ def evaluation_k_fold_cross_val(
         "Recall:".ljust(15) + f"{recall_mean} \xB1 {recall_std}\n" +
         "F1-score:".ljust(15) + f"{f1_score_mean} \xB1 {f1_score_std}\n" +
         "Specificity:".ljust(15) + f"{specificity_mean} \xB1 {specificity_std}\n" +
-        "ROC AUC score:".ljust(15) + f"{roc_auc_score_mean} \xB1 {roc_auc_score_std}"
+        "MCC:".ljust(15) + f"{mcc_mean} \xB1 {mcc_std}\n" +
+        "ROC AUC score:".ljust(15) + f"{roc_auc_score_mean} \xB1 {roc_auc_score_std}\n" +
+        "AUPRC score".ljust(15) + f"{auprc_mean} \xB1 {auprc_std}"
     )
 
-    print(metrics_result_test)
+    print(metrics_result_text)
 
     # Bear in mind that in the context of working with files, the `with`
     # context manager is preferred as it automatically takes care of
     # closing files, even in case of errors/exceptions
     with open(f"{output_path}", "w") as f:
-        f.write(metrics_result_test)
+        f.write(metrics_result_text)
 
     return accuracy_tuple, precision_tuple, recall_tuple,\
-        f1_score_tuple, specificity_tuple, roc_auc_tuple
+        f1_score_tuple, specificity_tuple, mcc_tuple, roc_auc_tuple,\
+        auprc_tuple
 
 
 def generate_ROC_curves(
