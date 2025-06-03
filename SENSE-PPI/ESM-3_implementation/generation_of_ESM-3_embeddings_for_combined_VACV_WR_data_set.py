@@ -67,6 +67,7 @@ def embed_sequence(id_seq_pair):
 
 if __name__ == "__main__":
     n_workers = mp.cpu_count()
+    print(f"{n_workers} CPU cores are available.")
 
     with mp.Pool(processes=n_workers) as pool:
         pool.map(embed_sequence, id_seq_pairs)
