@@ -82,10 +82,7 @@ for header, seq in VACV_and_human_prots_fasta.items():
     # Generate an embedding for each chunk
     for seq_chunk in seq_chunks:
         chunk_emb = predictor.embed(seq_chunk)
-        # Call clone on tensors to ensure tensors are not views into a
-        # larger representation
-        # See https://github.com/pytorch/pytorch/issues/1995
-        embs_list.append(chunk_emb.clone())
+        embs_list.append(chunk_emb)
     
     # Finally, save the embedding(s) to a file
     result = {"label": header}
