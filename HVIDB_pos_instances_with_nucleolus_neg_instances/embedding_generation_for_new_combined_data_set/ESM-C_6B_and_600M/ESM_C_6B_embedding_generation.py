@@ -55,21 +55,48 @@ def compute_embeds(model, fasta_file_path):
     # Iterate over the individual protein sequences and generate
     # embeddings for them
     for header, seq in fasta_file.items():
-        current_output = _embed_sequence(model=model, sequence=seq)
-        # Bear in mind that during tokenization, a beginning-of-sequence
-        # token as well as an end-of-sequence token are added to the
-        # beginning and the end of the sequence, respectively
-        # Thus, the embedding tensor has to be sliced such that they are
-        # removed
-        current_embedding = current_output.embeddings[0, 1:-1]
+        # The 6B parameters version of ESM Cambrian provided on Forge
+        # has an inherent maximum sequence length of 2,048 amino acids
+        # Thus, for protein sequences exceeding a length of 2,000 amino
+        # acids, the sequence is split into overlapping chunks and the
+        # chunks are encoded/embedded separately
+        # The overlap encompasses 100 amino acids
+        # As mean pooling is supposed to be performed, splitting the
+        # sequence into chunks does not pose any problem
+        if len(seq) > 2000:
+            WINDOW_SIZE = 2000
+            OVERLAP = 100
+            STEP = WINDOW_SIZE - OVERLAP
 
-        # Finally, save the embedding to a file
+            seq_chunks = []
+
+            for i in range(0, len(seq), STEP):
+                seq_chunk = seq[i:i + WINDOW_SIZE]
+                seq_chunks.append(seq_chunk)
+        else:
+            seq_chunks = [seq]
+        
+        embs_list = []
+        # Generate an embedding for each chunk
+        for seq_chunk in seq_chunks:
+            chunk_output = _embed_sequence(model=model, sequence=seq_chunk)
+            # Bear in mind that during tokenization, a
+            # beginning-of-sequence token as well as an end-of-sequence
+            # token are added to the beginning and the end of the
+            # sequence, respectively
+            # Thus, the embedding tensor has to be sliced such that they
+            # are removed
+            chunk_embedding = chunk_output.embeddings[0, 1:-1]
+            # Call clone on tensors to ensure tensors are not views into
+            # a larger representation
+            # See https://github.com/pytorch/pytorch/issues/1995
+            embs_list.append(chunk_embedding.clone())
+
+
+        # Finally, save the embedding(s) to a file
         result = {"label": header}
-        # Call clone on tensors to ensure tensors are not views into a
-        # larger representation
-        # See https://github.com/pytorch/pytorch/issues/1995
         result["representation"] = {
-            -1: current_embedding.clone()
+            -1: embs_list
         }
 
         torch.save(
@@ -81,6 +108,7 @@ def compute_embeds(model, fasta_file_path):
 esm3_embed_dir = "esm_c_embs_6B"
 
 if not os.path.exists(esm3_embed_dir):
+    os.makedirs(esm3_embed_dir)
     compute_embeds(model=client, fasta_file_path=path_to_fasta)
 else:
     fasta_file = fasta.FastaFile.read(path_to_fasta)
