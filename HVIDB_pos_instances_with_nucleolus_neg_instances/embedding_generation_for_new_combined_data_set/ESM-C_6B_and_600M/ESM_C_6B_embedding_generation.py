@@ -12,6 +12,7 @@ generation of soft/probabilistic negative labels.
 import os
 import logging
 from datetime import datetime
+import argparse
 
 import torch
 from biotite.sequence.io import fasta
@@ -25,6 +26,10 @@ from esm.sdk.api import ESMProtein, LogitsConfig
 # levels
 logging.basicConfig(level=logging.INFO)
 
+parser = argparse.ArgumentParser()
+parser.add_argument("forge_token", type=str)
+args = parser.parse_args()
+
 
 path_to_fasta = (
     "../VACV_WR_prots_pos_human_prots_human_peroxisome_prots_and_human_"
@@ -35,7 +40,7 @@ path_to_fasta = (
 client = ESM3ForgeInferenceClient(
     model="esmc-6b-2024-12",
     url="https://forge.evolutionaryscale.ai",
-    token="7fgiOd4qw8rkrZEePTYhsF"
+    token=args.forge_token
 )
 
 def _embed_sequence(model, sequence):
