@@ -11,6 +11,101 @@ from sklearn.metrics import confusion_matrix, roc_auc_score, roc_curve,\
     auc, matthews_corrcoef, average_precision_score
 from matplotlib import pyplot as plt
 
+
+def extract_test_set_preds(
+        all_preds_path, all_preds_prot_cols, test_set_tsv_path,
+        test_set_prot_cols, prob_col, label_col, output_file_name
+):
+    """
+    ...
+
+    Parameters
+    ----------
+    all_preds_path: str
+        ...
+    all_preds_prot_cols: iterable, dtype=str shape=(2,)
+        ...
+    test_set_tsv_path: str
+        ...
+    test_set_prot_cols: iterable, dtype=str, shape=(2,)
+        ...
+    prob_col: str
+        ...
+    label_col: str
+        ...
+    output_file_name: str
+        ...
+
+    Returns
+    -------
+    """
+    all_preds_df = pd.read_csv(
+        all_preds_path,
+        sep="\t"
+    )
+    test_set_df = pd.read_csv(
+        test_set_tsv_path,
+        sep="\t"
+    )
+
+    # Iterate over the test set TSV file and extract the predicted
+    # probability as well as the corresponding label from the
+    # predictions DataFrame
+    all_preds_prot_col_1, all_preds_prot_col_2 = all_preds_prot_cols
+    test_set_prot_col_1, test_set_prot_col_2 = test_set_prot_cols
+
+    test_set_probs = []
+    test_set_labels = []
+
+    for prot_1, prot_2 in zip(
+        test_set_df[test_set_prot_col_1], test_set_df[test_set_prot_col_2]
+    ):
+        subset_df = all_preds_df[
+            (all_preds_df[all_preds_prot_col_1] == prot_1)
+            &
+            (all_preds_df[all_preds_prot_col_2] == prot_2)
+        ]
+
+        assert len(subset_df) == 1, (
+            "The DataFrame subset filtered for the PPI between "
+            f"{prot_1} and {prot_2} contains more than one row!"
+        )
+
+        extracted_row = subset_df.iloc[0]
+
+        predicted_prob = extracted_row[prob_col]
+        predicted_label = extracted_row[label_col]
+
+        test_set_probs.append(predicted_prob)
+        test_set_labels.append(predicted_label)
+    
+    assert (
+        (len(test_set_probs) == len(test_set_df))
+        and
+        (len(test_set_labels) == len(test_set_df))
+    ), (
+        "The probability as well as label list do not comprise the "
+        "expected amount of elements!"
+    )
+
+    # Now that sanity checks have been passed, create the results file
+    # for the test set
+    data = {
+        all_preds_prot_col_1: test_set_df[test_set_prot_col_1].to_list(),
+        all_preds_prot_col_2: test_set_df[test_set_prot_col_2].to_list(),
+        prob_col: test_set_probs,
+        label_col: test_set_labels
+    }
+
+    test_set_preds_df = pd.DataFrame(data=data)
+
+    test_set_preds_df.to_csv(
+        f"{output_file_name}.tsv",
+        sep="\t",
+        index=False
+    )
+
+
 def _round_half_up(number):
     """
     Rounds the number provided as input to the nearest integer using the
