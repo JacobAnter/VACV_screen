@@ -3,7 +3,9 @@ This Python script harbours functions adding information from NCBI
 Entrez to Pandas DataFrames.
 """
 
+import numpy as np
 import pandas as pd
+from biotite.sequence.io import fasta
 
 
 class NCBI_Entrez_data_lookup:
@@ -24,13 +26,21 @@ class NCBI_Entrez_data_lookup:
     gene_refseq_uniprot_collab_file_path: str
         A string denoting the path to the
         `gene_refseq_uniprot_collab` file from NCBI Entrez.
+    sec_ac_file_path: str
+        A string denoting the path to the `sec_ac.txt` file from the
+        UniProt FTP file server.
+    all_human_prots_fasta_file_path: str
+        A path to a FASTA file containing all human proteins in UniProt,
+        i.e. from both Swiss-Prot and TrEMBL.
     """
     def __init__(
             self,
             gene_info_file_path,
             gene_history_file_path,
             gene2accession_file_path,
-            gene_refseq_uniprot_collab_file_path
+            gene_refseq_uniprot_collab_file_path,
+            sec_ac_file_path,
+            all_human_prots_fasta_file_path
     ):
         self.gene_info = pd.read_csv(
             gene_info_file_path,
@@ -54,6 +64,35 @@ class NCBI_Entrez_data_lookup:
             gene_refseq_uniprot_collab_file_path,
             sep="\t",
             usecols=["#NCBI_protein_accession", "UniProtKB_protein_accession"]
+        )
+
+        # Simply loading the `sec_ac.txt` file into a Pandas DataFrame
+        # is unfortunately not possible as it contains explanatory text
+        # at its very beginning
+        # Thus, the mapping between secondary accessions and their
+        # current primary accessions has to be extracted manually
+        # Bear in mind that in the context of working with files, the
+        # `with` context manager is preferred as it automatically takes
+        # care of closing files, even in case of errors/exceptions
+        with open(sec_ac_file_path, "r") as f:
+            # The accession mapping starts in line 32
+            lines = f.readlines()[31:]
+        
+        # Create a dictionary mapping secondary accessions to their
+        # current primary accessions
+        self.sec_to_prim_acc_dic = {}
+
+        for line in lines:
+            sec_ac, prim_ac = line.split()
+            self.sec_to_prim_acc_dic[sec_ac] = prim_ac
+        
+        # Some supposedly current, i.e. valid primary accessions have
+        # been retracted without being listed in the `delac_sp.txt` and
+        # `delac_tr.txt` files
+        # Thus, a FASTA file containing all human proteins from both
+        # Swiss-Prot and TrEMBL is used to identify retracted accessions
+        self.all_human_prots_fasta = fasta.FastaFile.read(
+            all_human_prots_fasta_file_path
         )
 
 
@@ -246,6 +285,41 @@ class NCBI_Entrez_data_lookup:
             left_on="protein_accession.version",
             right_on="#NCBI_protein_accession",
             how="left"
+        )
+
+        # There is the possibility that a UniProtKB protein accession
+        # deposited in the `gene_refseq_uniprot_collab` file turned to
+        # a secondary accession, i.e. has been replaced with another
+        # primary accession
+        # In order to accommodate this possibility, the dictionary
+        # created upon class instantiation is used
+        # There is no need to define a private function for this purpose
+        # as `pandas.Series.map` also accepts a dictionary as argument
+        uniprot_acc_col = "UniProtKB_protein_accession"
+        gene_id_ncbi_acc_uniprot_acc_df[uniprot_acc_col] = (
+            gene_id_ncbi_acc_uniprot_acc_df[uniprot_acc_col]
+            .map(self.sec_to_prim_acc_dic)
+            .fillna(gene_id_ncbi_acc_uniprot_acc_df[uniprot_acc_col])
+        )
+
+        # Yet another layer of complexity stems from the fact that some
+        # supposedly current, i.e. valid UniProtKB accessions have been
+        # retracted without being listed in the `delac_sp.txt` and
+        # `delac_tr.txt` files
+        # Thus, the FASTA file containing all human proteins and loaded
+        # upon object instantiation is used so as to identify these
+        # supposedly current, but actually retracted protein accessions
+        all_human_prots_accs = set(self.all_human_prots_fasta.keys())
+
+        # Define a private function returning either the UniProtKB
+        # protein accession in case of it being valid or `NaN` in case
+        # of it being retracted
+        def _check_acc_validity(acc):
+            return acc if acc in all_human_prots_accs else np.nan
+        
+        gene_id_ncbi_acc_uniprot_acc_df[uniprot_acc_col] = (
+            gene_id_ncbi_acc_uniprot_acc_df[uniprot_acc_col]
+            .map(_check_acc_validity)
         )
         
         # Now, the `UniProt_IDs` column of `pd_df` is populated in the
