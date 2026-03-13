@@ -291,7 +291,7 @@ shape_x = model.layers[-2].get_output_at(0).get_shape()[1]
 X=Train.iloc[:,0:shape_x].values
 
 # Generate logits via XGBoost
-logits = model_.predict_proba(X, output_margin=True)
+logits = model_.predict(X, output_margin=True)
 
 # Feed the logits into Platt scaling (logistic regresion) to obtain
 # probabilities
