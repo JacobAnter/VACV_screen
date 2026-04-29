@@ -293,7 +293,7 @@ def evaluation_k_fold_cross_val(
         corresponding standard deviation.
     roc_auc_score_tuple: tuple, dtype=float
         A tuple the first element of which is the mean ROC AUC score
-        across the k test sets and he second element of which is the
+        across the k test sets and the second element of which is the
         corresponding standard deviation.
     """
 
