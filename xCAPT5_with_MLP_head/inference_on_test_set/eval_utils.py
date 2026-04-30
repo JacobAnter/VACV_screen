@@ -7,6 +7,7 @@ as well as histograms visualizing the distribution of predicted
 probabiltiies,
 """
 
+import os
 import math
 
 import numpy as np
@@ -15,6 +16,7 @@ from sklearn.metrics import confusion_matrix, roc_auc_score, roc_curve,\
     auc, matthews_corrcoef, average_precision_score,\
     precision_recall_curve
 from matplotlib import pyplot as plt
+import matplotlib as mpl
 
 
 def round_half_up(unrounded_num, decimal_place=0):
@@ -146,6 +148,135 @@ def generate_roc_curve(preds, ground_truth, title_info, image_path):
     return roc_auc_score, curve_df
 
 
+def superimpose_roc_curves(
+        preds_list, ground_truth, descriptor_list, image_dir,
+        fname_info, best_in_bold=False
+):
+    """
+    Superimposes ROC curves, i.e. generates one plot depicting multiple
+    ROC curves.
+
+    Parameters
+    ----------
+    preds_list: list, dtype=Pandas DataFrame, shape=(n,)
+        A list storing Pandas DataFrames, which in turn store predicted
+        probabilities for PPI pairs. The DataFrames are expected to have
+        a header, i.e. column names. They are also expected to have a
+        MultiIndex comprising two levels with UniProt accessions. One
+        column is expected to  contain the predicted probabilities and
+        to bear the name "interaction_probability", accordingly.
+    ground_truth: Pandas DataFrame
+        A Pandas DataFrame storing the ground truth labels for the PPI
+        pairs. It is expected to have a header. Again, it is expected to
+        have a MultiIndex comprising two levels with UniProt accessions.
+        One column is expected to bear the name "label" and to contain
+        the ground truth labels.
+    descriptor_list: list, dtype=str, shape=(n,)
+        A list comprising short descriptions of the ROC curves; their
+        order has to match the order of DataFrames in `preds_list. These
+        descriptions appear in the figure legend.
+    image_dir: str
+        A string denoting the path to the directory to store the image
+        in.
+    fname_info: str
+        A string providing information about the ROC curves on the plot.
+        It appears in the file name.
+    best_in_bold: bool, optional, default=False
+        A Boolean indicating whether the legend entry associated with
+        the best AUC score is displayed in bold. By default, it is not.
+
+    Returns
+    -------
+    None
+    """
+
+    fig, ax = plt.subplots(1, 1)
+
+    ax.set_xlabel("False Positive Rate", fontsize=20)
+    ax.set_ylabel("True Positive Rate", fontsize=20)
+
+    ax.tick_params(labelsize=17)
+
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1.05)
+
+    # Plot the dashed diagonal line representing a random chance model
+    ax.plot([0, 1], [0, 1], lw=2, linestyle="--")
+
+    # Load a colormap for assigning colors to the individual curves in
+    # the plot
+    colors = mpl.colormaps["tab10"].colors
+
+    # Extract the ground truth labels
+    ground_truth_arr = ground_truth["label"].to_numpy()
+
+    auc_score_list = []
+
+    # Iterate over the predictions DataFrames, extract the ROC data and
+    # plot the curve
+    for preds_df, description, color in zip(
+        preds_list, descriptor_list, colors
+    ):
+        # Reindex the DataFrame storing the predictions so that its row
+        # order matches that of the ground truth DataFrame
+        preds_df = preds_df.reindex(ground_truth.index)
+        # Extract the predicted probabilities
+        predicted_probs = preds_df["interaction_probability"].to_numpy()
+
+        # Use the ground truth labels in conjunction with the predicted
+        # probabilities so as to compute the FPR/TPR values as well as
+        # the AUC score
+        fpr, tpr, _ = roc_curve(
+            ground_truth_arr, predicted_probs
+        )
+        roc_auc_score = auc(fpr, tpr)
+        auc_score_list.append(roc_auc_score)
+        roc_auc_score = round_half_up(roc_auc_score, 4)
+
+        # Plot the ROC curve
+        ax.plot(
+            fpr,
+            tpr,
+            color=color,
+            lw=2,
+            label=f"{description} (AUC={roc_auc_score:.4f})"
+        )
+    
+    # Add a legend to the figure displaying the AUC scores of the
+    # individual ROC curves
+    leg = ax.legend(loc="best", fontsize=13)
+
+    if best_in_bold:
+        # Determine the indices of the best AUC score
+        best_auc_idx = [
+            i for i, auc in enumerate(auc_score_list)
+            if auc == max(auc_score_list)
+        ]
+
+        for i, text in enumerate(leg.get_texts()):
+            if i in best_auc_idx:
+                text.set_fontweight("bold")
+    
+    fig.tight_layout()
+
+    # The figure is saved twice, once as a PNG and once as an SVG (for
+    # the publication)
+    fig.savefig(
+        os.path.join(
+            image_dir,
+            f"ROC_curves_{fname_info}.png"
+        ),
+        dpi=300
+    )
+
+    fig.savefig(
+        os.path.join(
+            image_dir,
+            f"ROC_curves_{fname_info}.svg"
+        )
+    )
+
+
 def generate_pr_curve(preds, ground_truth, title_info, image_path):
     """
     Generates a PR (Precision-Recall) curve.
@@ -227,6 +358,132 @@ def generate_pr_curve(preds, ground_truth, title_info, image_path):
     )
 
     return pr_auc_score, curve_df
+
+
+def superimpose_pr_curves(
+        preds_list, ground_truth, descriptor_list, image_dir,
+        fname_info, best_in_bold=False
+):
+    """
+    Superimposes PR curves, i.e. generates one plot depicting multiple
+    PR curves.
+
+    Parameters
+    ----------
+    preds_list: list, dtype=Pandas DataFrame, shape=(n,)
+        A list storing Pandas DataFrames, which in turn store predicted
+        probabilities for PPI pairs. The DataFrames are expected to have
+        a header, i.e. column names. They are also expected to have a
+        MultiIndex comprising two levels with UniProt accessions. One
+        column is expected to  contain the predicted probabilities and
+        to bear the name "interaction_probability", accordingly.
+    ground_truth: Pandas DataFrame
+        A Pandas DataFrame storing the ground truth labels for the PPI
+        pairs. It is expected to have a header. Again, it is expected to
+        have a MultiIndex comprising two levels with UniProt accessions.
+        One column is expected to bear the name "label" and to contain
+        the ground truth labels.
+    descriptor_list: list, dtype=str, shape=(n,)
+        A list comprising short descriptions of the ROC curves; their
+        order has to match the order of DataFrames in `preds_list. These
+        descriptions appear in the figure legend.
+    image_dir: str
+        A string denoting the path to the directory to store the image
+        in.
+    fname_info: str
+        A string providing information about the ROC curves on the plot.
+        It appears in the file name.
+    best_in_bold: bool, optional, default=False
+        A Boolean indicating whether the legend entry associated with
+        the best AUC score is displayed in bold. By default, it is not.
+
+    Returns
+    -------
+    None
+    """
+
+    fig, ax = plt.subplots(1, 1)
+
+    ax.set_xlabel("Recall", fontsize=20)
+    ax.set_ylabel("Precision", fontsize=20)
+
+    ax.tick_params(labelsize=17)
+
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1.05)
+
+    # Load a colormap for assigning colors to the individual curves in
+    # the plot
+    colors = mpl.colormaps["tab10"].colors
+
+    # Extract the ground truth labels
+    ground_truth_arr = ground_truth["label"].to_numpy()
+
+    pr_auc_score_list = []
+
+    # Iterate over the predictions DataFrames, extract the PR curve data
+    # and plot the curve
+    for preds_df, description, color in zip(
+        preds_list, descriptor_list, colors
+    ):
+        # Reindex the DataFrame storing the predictions so that its row
+        # order matches that of the ground truth DataFrame
+        preds_df = preds_df.reindex(ground_truth.index)
+        # Extract the predicted probabilities
+        predicted_probs = preds_df["interaction_probability"].to_numpy()
+
+        # Use the ground truth labels in conjunction with the predicted
+        # probabilities as as to compute the recall and precision values
+        # as well as the AUC score
+        precision, recall, _ = precision_recall_curve(
+            ground_truth_arr, predicted_probs
+        )
+        pr_auc_score = auc(recall, precision)
+        pr_auc_score_list.append(pr_auc_score)
+        pr_auc_score = round_half_up(pr_auc_score, 4)
+
+        # Plot the ROC curve
+        ax.plot(
+            recall,
+            precision,
+            color=color,
+            lw=2,
+            label=f"{description} (AUC={pr_auc_score:.4f})"
+        )
+    
+    # Add a legend to the figure displaying the AUC scores of the
+    # individual PR curves
+    leg = ax.legend(loc="best", fontsize=13)
+
+    if best_in_bold:
+        # Determine the indices of the best AUC score
+        best_auc_idx = [
+            i for i, auc in enumerate(pr_auc_score_list)
+            if auc == max(pr_auc_score_list)
+        ]
+
+        for i, text in enumerate(leg.get_texts()):
+            if i in best_auc_idx:
+                text.set_fontweight("bold")
+    
+    fig.tight_layout()
+
+    # The figure is saved twice, once as a PNG and once as an SVG (for
+    # the publication)
+    fig.savefig(
+        os.path.join(
+            image_dir,
+            f"PR_curves_{fname_info}.png"
+        ),
+        dpi=300
+    )
+
+    fig.savefig(
+        os.path.join(
+            image_dir,
+            f"PR_curves_{fname_info}.svg"
+        )
+    )
 
 
 def prob_histogram(preds, title_info, image_path):
