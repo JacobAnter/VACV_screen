@@ -44,10 +44,12 @@ def plot_auroc(preds_tsvs, labels_tsvs, descriptions, output_path):
         plt.plot(fpr, tpr, label=f'{desc} (AUROC = {auroc_rounded})', color=color)
         
     plt.plot([0, 1], [0, 1], '--', color='gray')
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('ROC Curve')
-    leg = plt.legend(loc='lower right')
+    plt.xlabel('False Positive Rate', fontsize=18)
+    plt.ylabel('True Positive Rate', fontsize=18)
+    plt.xticks(fontsize=13)
+    plt.yticks(fontsize=13)
+    plt.title('ROC Curve', fontsize=20)
+    leg = plt.legend(loc='lower right', fontsize=13)
     if leg and aurocs:
         best_idx = aurocs.index(max(aurocs))
         leg.get_texts()[best_idx].set_fontweight('bold')
@@ -79,10 +81,12 @@ def plot_pr_auc(preds_tsvs, labels_tsvs, descriptions, output_path):
         color = colors[idx % len(colors)]
         plt.plot(recall, precision, label=f'{desc} (PR AUC = {pr_auc_rounded})', color=color)
         
-    plt.xlabel('Recall')
-    plt.ylabel('Precision')
-    plt.title('Precision-Recall Curve')
-    leg = plt.legend(loc='lower left')
+    plt.xlabel('Recall', fontsize=18)
+    plt.ylabel('Precision', fontsize=18)
+    plt.xticks(fontsize=13)
+    plt.yticks(fontsize=13)
+    plt.title('Precision-Recall Curve', fontsize=20)
+    leg = plt.legend(loc='best', fontsize=13)
     if leg and pr_aucs:
         best_idx = pr_aucs.index(max(pr_aucs))
         leg.get_texts()[best_idx].set_fontweight('bold')
@@ -138,10 +142,12 @@ def plot_top_k_metrics(preds_tsvs, labels_tsvs, descriptions, metric_type, outpu
         color = colors[idx % len(colors)]
         plt.plot(KS, metrics, marker='o', label=desc, color=color)
             
-    plt.xlabel('k')
-    plt.ylabel(metric_type.capitalize())
-    plt.title(f'{metric_type.capitalize()} @ k Curve')
-    leg = plt.legend()
+    plt.xlabel('k', fontsize=18)
+    plt.ylabel(metric_type.capitalize(), fontsize=18)
+    plt.xticks(fontsize=13)
+    plt.yticks(fontsize=13)
+    plt.title(f'{metric_type.capitalize()} @ k Curve', fontsize=20)
+    leg = plt.legend(fontsize=13)
     if leg and aucs:
         best_idx = aucs.index(max(aucs))
         leg.get_texts()[best_idx].set_fontweight('bold')
